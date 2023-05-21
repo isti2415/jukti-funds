@@ -1,0 +1,188 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* globals.css */
+
+/* Reset default styles */
+html,
+body,
+div,
+span,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+a,
+img,
+button,
+input,
+textarea,
+select,
+label {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+  box-sizing: border-box;
+}
+
+/* Set root font size and background */
+html {
+  font-size: 16px;
+  background-color: #f9fafb;
+}
+
+/* Set base font styles */
+body {
+  font-family: "Roboto", sans-serif;
+  line-height: 1.5;
+  color: #333333;
+}
+
+/* Remove default list styles */
+ul,
+ol {
+  list-style: none;
+}
+
+/* Anchor styles */
+a {
+  color: #0070f3;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Button styles */
+button {
+  cursor: pointer;
+}
+
+/* Container styles */
+.container {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+/* Utility classes */
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+.text-4xl {
+  font-size: 2.25rem;
+  font-weight: 600;
+}
+
+.text-gray-400 {
+  color: #9ca3af;
+}
+
+.mb-8 {
+  margin-bottom: 8px;
+}
+
+.text-lg {
+  font-size: 1.125rem;
+}
+
+.text-gray-200 {
+  color: #edf2f7;
+}
+
+.mt-12 {
+  margin-top: 12px;
+}
+
+.space-y-4 > * + * {
+  margin-top: 1rem;
+}
+
+.bg-jukti-orange-dark {
+  background-color: #f58937;
+}
+
+.text-jukti-orange-dark {
+  color: #f58937;
+}
+
+.hover\:bg-jukti-orange-dark:hover {
+  background-color: #cc5800;
+}
+
+.bg-jukti-orange {
+  background-color: #f58937;
+}
+
+.text-jukti-orange {
+  color: #f58937;
+}
+
+.hover\:bg-jukti-orange:hover {
+  background-color: #cc5800;
+}
+
+.text-white {
+  color: #ffffff;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.py-2 {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.px-4 {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.rounded {
+  border-radius: 0.25rem;
+}
+
+.h-16 {
+  height: 4rem;
+}
+
+.floating-menu-icon {
+  position: fixed;
+  top: 45px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: right;
+  justify-content: right;
+  cursor: pointer;
+  z-index: 1000;
+}
+
+.floating-menu-icon.open {
+  width: 200px;
+}
+
+.floating-menu-icon svg {
+  width: 24px;
+  height: 24px;
+}
