@@ -1344,7 +1344,7 @@ const SettingsContent = () => {
                     {paymentMethods.map((paymentMethod) => (
                         <li key={paymentMethod.id} className="flex items-center justify-between py-2">
                             <div>
-                                <span className="text-white font-bold">{paymentMethod.name}</span>
+                                <span className="text-white font-bold text-xl">{paymentMethod.name}</span>
                                 <div className="formatted-text text-white" style={{whiteSpace:'pre-wrap'}} dangerouslySetInnerHTML={{ __html: paymentMethod.description }}></div>
                             </div>
                             <button
