@@ -464,7 +464,7 @@ const PaymentMethodContent = () => {
                 const paymentMethod = {
                     id: childSnapshot.key,
                     name: childSnapshot.val().name,
-                    description: childSnapshot.val().description,
+                    description: childSnapshot.val().description.replace(/\n/g, '<br>'),
                 };
                 paymentMethodsList.push(paymentMethod);
             });
@@ -484,8 +484,8 @@ const PaymentMethodContent = () => {
                                     <Disclosure.Button className="flex flex-auto justify-center bg-jukti-orange hover:bg-jukti-orange-dark w-full text-white font-bold py-4 my-4 px-4 rounded focus:outline-none focus:shadow-outline">
                                         <h3 className="text-xl">{paymentMethod.name}</h3>
                                     </Disclosure.Button>
-                                    <Disclosure.Panel className="px-4 pt-4 pb-2 text-white">
-                                        <p className="mb-4">{paymentMethod.description}</p>
+                                    <Disclosure.Panel className="px-4 pt-4 pb-2 text-white text-lg">
+                                        <div className="formatted-text" style={{whiteSpace:'pre-wrap'}} dangerouslySetInnerHTML={{ __html: paymentMethod.description }}></div>
                                     </Disclosure.Panel>
                                 </>
                             )}
@@ -1216,7 +1216,7 @@ const SettingsContent = () => {
                 const paymentMethod = {
                     id: childSnapshot.key,
                     name: childSnapshot.val().name,
-                    description: childSnapshot.val().description,
+                    description: childSnapshot.val().description.replace(/\n/g, '<br>'),
                 };
                 paymentMethodsList.push(paymentMethod);
             });
@@ -1345,7 +1345,7 @@ const SettingsContent = () => {
                         <li key={paymentMethod.id} className="flex items-center justify-between py-2">
                             <div>
                                 <span className="text-white font-bold">{paymentMethod.name}</span>
-                                <p className="text-gray-300">{paymentMethod.description}</p>
+                                <div className="formatted-text text-white" style={{whiteSpace:'pre-wrap'}} dangerouslySetInnerHTML={{ __html: paymentMethod.description }}></div>
                             </div>
                             <button
                                 className="text-red-500"
