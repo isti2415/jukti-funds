@@ -1741,7 +1741,7 @@ const CalenderContent = ({ department, isAdmin }) => {
 
         return (
             <div className="fixed inset-0 flex justify-center items-center" style={{zIndex:1000}}>
-                <div className="flex items-end justify-center min-h-screen px-4 pb-40 text-center sm:block sm:p-0">
+                <div className="flex items-end justify-center min-h-screen px-4 pb-30 text-center sm:block sm:p-0">
                     <div className="fixed inset-0 transition-opacity" aria-hidden="true">
                         <div className="absolute inset-0 bg-gray-500 opacity-75" />
                     </div>
