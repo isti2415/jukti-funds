@@ -1664,7 +1664,7 @@ const CalenderContent = ({ department, isAdmin }) => {
 
     const MyModal = () => {
         return (
-            <div className="fixed inset-0 flex justify-center items-center bg-gray-300 bg-opacity-75">
+            <div className="fixed inset-0 flex justify-center items-center bg-gray-300 bg-opacity-75" style={{ zIndex: 1000 }}>
                 <div className="bg-gray-900 p-8 rounded-lg">
                     <div className="text-white">
                         <h2 className="text-2xl">Event: {selectedEvent.title}</h2>
