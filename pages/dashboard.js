@@ -361,6 +361,7 @@ const PaymentContent = ({ handleMenuSelection }) => {
                                     month: e.target.value,
                                 }))
                             }
+                            required
                             className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
                         >
                             <option value="">Select Month</option>
@@ -391,6 +392,7 @@ const PaymentContent = ({ handleMenuSelection }) => {
                                     year: e.target.value,
                                 }))
                             }
+                            required
                             className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
                         >
                             <option value="">Select Year</option>
