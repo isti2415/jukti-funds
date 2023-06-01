@@ -1717,7 +1717,6 @@ const CalenderContent = ({ department, isAdmin }) => {
             setEditedEventEndDateTime('');
             setEditedEventType('');
             setIsEditing(false);
-            setShowModal(false);
         };
 
         const handleEditEvent = () => {
@@ -1740,146 +1739,127 @@ const CalenderContent = ({ department, isAdmin }) => {
         };
 
         return (
-            <div className="fixed inset-0 flex justify-center items-center" style={{zIndex:1000}}>
-                <div className="flex items-end justify-center min-h-screen px-4 pb-30 text-center sm:block sm:p-0">
-                    <div className="fixed inset-0 transition-opacity" aria-hidden="true">
-                        <div className="absolute inset-0 bg-gray-500 opacity-75" />
-                    </div>
-                    <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">
-                        &#8203;
-                    </span>
-                    <div
-                        className="inline-block align-center bg-white rounded-lg text-left overflow-auto shadow-xl transform transition-all sm:align-middle sm:max-w-6xl sm:w-full"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="modal-headline"
-                    >
-                        <div className="bg-gray-900 p-6">
-                            <div className="sm:flex sm:items-start">
-                                <div className="text-left w-full">
-                                    <div className="mt-2">
-                                        <form onSubmit={isEditing ? handleUpdateEvent : handleCreateEvent} className="grid grid-cols-1">
-                                            <div className="flex flex-col">
-                                                <label className="block text-white mb-1" htmlFor="eventName">
-                                                    Event Name:
-                                                </label>
-                                                <input
-                                                    className="px-2 py-1 rounded bg-gray-300"
-                                                    type="text"
-                                                    id="eventName"
-                                                    value={isEditing ? editedEventName : selectedEvent.title}
-                                                    onChange={isEditing ? handleEditedEventNameChange : handleEventNameChange}
-                                                    disabled={!isEditing}
-                                                />
-                                            </div>
-                                            <div className="flex flex-col py-2">
-                                                <label className="block text-white mb-1" htmlFor="eventType">
-                                                    Event Type:
-                                                </label>
-                                                <select
-                                                    className="px-2 py-2 rounded bg-gray-100"
-                                                    id="eventType"
-                                                    value={isEditing ? editedEventType : selectedEvent.type}
-                                                    onChange={isEditing ? handleEditedEventTypeChange : handleEventTypeChange}
-                                                    disabled={!isEditing}
+            <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75" style={{ zIndex: 1000 }}>
+                <div className="bg-gray-900 p-6 rounded-xl">
+                    <div className="text-left w-full ">
+                        <form onSubmit={isEditing ? handleUpdateEvent : handleCreateEvent} className="grid grid-cols-1">
+                            <div className="flex flex-col">
+                                <label className="block text-white mb-1" htmlFor="eventName">
+                                    Event Name:
+                                </label>
+                                <input
+                                    className="px-2 py-1 rounded bg-gray-300"
+                                    type="text"
+                                    id="eventName"
+                                    value={isEditing ? editedEventName : selectedEvent.title}
+                                    onChange={isEditing ? handleEditedEventNameChange : handleEventNameChange}
+                                    disabled={!isEditing}
+                                />
+                            </div>
+                            <div className="flex flex-col py-2">
+                                <label className="block text-white mb-1" htmlFor="eventType">
+                                    Event Type:
+                                </label>
+                                <select
+                                    className="px-2 py-2 rounded bg-gray-100"
+                                    id="eventType"
+                                    value={isEditing ? editedEventType : selectedEvent.type}
+                                    onChange={isEditing ? handleEditedEventTypeChange : handleEventTypeChange}
+                                    disabled={!isEditing}
+                                >
+                                    <option value="">Select Event Type</option>
+                                    {eventTypes.map((eventType) => (
+                                        <option key={eventType.id} value={eventType.name}>
+                                            {eventType.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex flex-col py-2">
+                                <label className="block text-white mb-1" htmlFor="eventDetails">
+                                    Event Details:
+                                </label>
+                                <textarea
+                                    className="px-2 py-2 rounded bg-gray-300"
+                                    type="text"
+                                    id="eventDetails"
+                                    value={isEditing ? editedEventDetails : selectedEvent.details}
+                                    onChange={isEditing ? handleEditedEventDetailsChange : handleEventDetailsChange}
+                                    disabled={!isEditing}
+                                />
+                            </div>
+                            <div className="flex flex-col py-2">
+                                <label className="block text-white mb-1" htmlFor="eventStartDateTime">
+                                    Start Date & Time:
+                                </label>
+                                <input
+                                    className="px-2 py-1 rounded bg-gray-300"
+                                    type="datetime-local"
+                                    id="eventStartDateTime"
+                                    value={isEditing ? moment(editedEventStartDateTime).format('YYYY-MM-DDTHH:mm') : moment(selectedEvent.start).format('YYYY-MM-DDTHH:mm')}
+                                    onChange={(e) => handleEditedEventDateTimeChange('start', e.target.value)}
+                                    disabled={!isEditing}
+                                />
+                            </div>
+                            <div className="flex flex-col py-2">
+                                <label className="block text-white mb-1" htmlFor="eventEndDateTime">
+                                    End Date & Time:
+                                </label>
+                                <input
+                                    className="px-2 py-1 rounded bg-gray-300"
+                                    type="datetime-local"
+                                    id="eventEndDateTime"
+                                    value={isEditing ? moment(editedEventEndDateTime).format('YYYY-MM-DDTHH:mm') : moment(selectedEvent.end).format('YYYY-MM-DDTHH:mm')}
+                                    onChange={(e) => handleEditedEventDateTimeChange('end', e.target.value)}
+                                    disabled={!isEditing}
+                                />
+                            </div>
+                            {(department === 'Public Relations' || isAdmin) && (
+                                <div className="flex flex-wrap justify-between items-center">
+                                    {isEditing ? (
+                                        <>
+                                            <div className="flex flex-col mt-4 mr-2">
+                                                <button
+                                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold px-4 py-1 rounded focus:outline-none "
+                                                    type="submit"
                                                 >
-                                                    <option value="">Select Event Type</option>
-                                                    {eventTypes.map((eventType) => (
-                                                        <option key={eventType.id} value={eventType.name}>
-                                                            {eventType.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
+                                                    Update
+                                                </button>
                                             </div>
-                                            <div className="flex flex-col py-2">
-                                                <label className="block text-white mb-1" htmlFor="eventDetails">
-                                                    Event Details:
-                                                </label>
-                                                <textarea
-                                                    className="px-2 py-2 rounded bg-gray-300"
-                                                    type="text"
-                                                    id="eventDetails"
-                                                    value={isEditing ? editedEventDetails : selectedEvent.details}
-                                                    onChange={isEditing ? handleEditedEventDetailsChange : handleEventDetailsChange}
-                                                    disabled={!isEditing}
-                                                />
+                                            <div className="flex flex-col mt-4 mr-2">
+                                                <button
+                                                    className="bg-red-500 hover:bg-red-700 text-white font-bold px-4 py-1 rounded focus:outline-none "
+                                                    type="button"
+                                                    onClick={handleCancelEdit}
+                                                >
+                                                    Cancel
+                                                </button>
                                             </div>
-                                            <div className="flex flex-col py-2">
-                                                <label className="block text-white mb-1" htmlFor="eventStartDateTime">
-                                                    Start DateTime:
-                                                </label>
-                                                <input
-                                                    className="px-2 py-1 rounded bg-gray-300"
-                                                    type='datetime-local'
-                                                    id="eventStartDateTime"
-                                                    value={isEditing ? moment(editedEventStartDateTime).format('YYYY-MM-DDTHH:mm') : moment(selectedEvent.start).format('YYYY-MM-DDTHH:mm')}
-                                                    onChange={(e) => handleEditedEventDateTimeChange('start', e.target.value)}
-                                                    disabled={!isEditing}
-                                                />
-                                            </div>
-                                            <div className="flex flex-col py-2">
-                                                <label className="block text-white mb-1" htmlFor="eventEndDateTime">
-                                                    End DateTime:
-                                                </label>
-                                                <input
-                                                    className="px-2 py-1 rounded bg-gray-300"
-                                                    type="datetime-local"
-                                                    id="eventEndDateTime"
-                                                    value={isEditing ? moment(editedEventEndDateTime).format('YYYY-MM-DDTHH:mm') : moment(selectedEvent.end).format('YYYY-MM-DDTHH:mm')}
-                                                    onChange={(e) => handleEditedEventDateTimeChange('end', e.target.value)}
-                                                    disabled={!isEditing}
-                                                />
-                                            </div>
-                                            {(department === 'Public Relations' || isAdmin) && (
-                                            <div className="flex flex-wrap justify-between items-center">
-                                                {isEditing ? (
-                                                    <>
-                                                        <div className="flex flex-col mt-4 mr-2">
-                                                            <button
-                                                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold px-4 py-1 rounded focus:outline-none "
-                                                                type="submit"
-                                                            >
-                                                                Update
-                                                            </button>
-                                                        </div>
-                                                        <div className="flex flex-col mt-4 mr-2">
-                                                            <button
-                                                                className="bg-red-500 hover:bg-red-700 text-white font-bold px-4 py-1 rounded focus:outline-none "
-                                                                type="button"
-                                                                onClick={handleCancelEdit}
-                                                            >
-                                                                Cancel
-                                                            </button>
-                                                        </div>
-                                                    </>
-                                                ) : (
-                                                    <div className="flex flex-col mt-4">
-                                                        <button
-                                                            className="bg-blue-500 hover:bg-blue-700 text-white font-bold px-4 py-1 rounded focus:outline-none"
-                                                            type="button"
-                                                            onClick={handleEditEvent}
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                <div className="flex flex-col mt-4">
-                                                    <button
-                                                        className="bg-red-500 hover:bg-red-700 text-white font-bold px-4 py-1 rounded focus:outline-none "
-                                                        type="button"
-                                                        onClick={handleDeleteEvent}
-                                                    >
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            )}
-                                        </form>
+                                        </>
+                                    ) : (
+                                        <div className="flex flex-col mt-4">
+                                            <button
+                                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold px-4 py-1 rounded focus:outline-none"
+                                                type="button"
+                                                onClick={handleEditEvent}
+                                            >
+                                                Edit
+                                            </button>
+                                        </div>
+                                    )}
+                                    <div className="flex flex-col mt-4">
+                                        <button
+                                            className="bg-red-500 hover:bg-red-700 text-white font-bold px-4 py-1 rounded focus:outline-none "
+                                            type="button"
+                                            onClick={handleDeleteEvent}
+                                        >
+                                            Delete
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div className="bg-gray-900 px-4 py-4 flex flex-row-reverse">
+                            )}
+                        </form>
+                        <div className="bg-gray-900 py-4 flex flex-row-reverse">
                             <button
                                 type="button"
                                 className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-jukti-orange text-base font-medium text-white hover:bg-jukti-orange-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-jukti-orange-dark"
