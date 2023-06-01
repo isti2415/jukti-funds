@@ -1761,7 +1761,7 @@ const CalenderContent = ({ department, isAdmin }) => {
                                     Event Type:
                                 </label>
                                 <select
-                                    className="px-2 py-2 rounded bg-gray-100"
+                                    className="px-2 py-2 rounded bg-gray-300"
                                     id="eventType"
                                     value={isEditing ? editedEventType : selectedEvent.type}
                                     onChange={isEditing ? handleEditedEventTypeChange : handleEventTypeChange}
