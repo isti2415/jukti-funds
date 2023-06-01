@@ -6,6 +6,11 @@ import { getDatabase, ref, onValue, set, update, orderByChild, equalTo, push, re
 import app from './api/firebaseConfig';
 import { Disclosure } from '@headlessui/react';
 import jsCookie from 'js-cookie';
+import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
+import moment from 'moment';
+
+const localizer = momentLocalizer(moment);
 
 const Dashboard = () => {
 
@@ -16,8 +21,8 @@ const Dashboard = () => {
     const [isMenuExpanded, setIsMenuExpanded] = useState(false);
     const [selectedMenu, setSelectedMenu] = useState('Payment');
     const [isAdmin, setIsAdmin] = useState(false); // Default value set to false
-
-
+    const [department, setDepartment] = useState("");
+    const [position, setPosition] = useState("");
 
     const toggleMenu = () => {
         setIsMenuExpanded((prevIsMenuExpanded) => !prevIsMenuExpanded);
@@ -38,6 +43,8 @@ const Dashboard = () => {
                 if (users) {
                     const isAdmin = Object.values(users).find((user) => user.email === email)?.isAdmin || false;
                     setIsAdmin(isAdmin);
+                    setDepartment(Object.values(users).find((user) => user.email === email)?.department);
+                    setPosition(Object.values(users).find((user) => user.email === email)?.position);
                 }
             });
         };
@@ -86,7 +93,7 @@ const Dashboard = () => {
             unsubscribe(); // Unsubscribe the listener on component unmount
         };
 
-    }, [auth, router, selectedMenu]);
+    }, [selectedMenu, router, auth]);
 
     if (jsCookie.get("userEmail")) {
         return (
@@ -94,6 +101,7 @@ const Dashboard = () => {
                 <div className={`floating-menu-icon ${isMenuExpanded ? 'open' : ''}`} onClick={toggleMenu}>
                     <svg
                         className="h-8 w-8 fill-current text-jukti-orange"
+                        style={{ zIndex: 1000 }}
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
                     >
@@ -103,7 +111,8 @@ const Dashboard = () => {
                 <div className="flex overflow-x-hidden">
                     <div
                         className={`bg-gray-800 fixed top-10 min-h-screen right-0 ${isMenuExpanded ? 'w-64' : 'w-0'
-                            } transition-width duration-300 overflow-y-auto transition-all`}
+                            } transition-width duration-300 overflow-y-auto transition-all ease-in-out`}
+                        style={{ zIndex: 999 }}
                     >
                         {/* Menu content */}
                         {isMenuExpanded && (
@@ -149,6 +158,22 @@ const Dashboard = () => {
                                 ) : null}
                                 {isAdmin ? (
                                     <li
+                                        className={`py-2 pl-4 cursor-pointer ${selectedMenu === 'reports' ? 'bg-jukti-orange' : 'hover:bg-gray-800'
+                                            }`}
+                                        onClick={() => handleMenuSelection('reports')}
+                                    >
+                                        <span className="text-white">Reports</span>
+                                    </li>
+                                ) : null}
+                                <li
+                                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === 'calender' ? 'bg-jukti-orange' : 'hover:bg-gray-800'
+                                        }`}
+                                    onClick={() => handleMenuSelection('calender')}
+                                >
+                                    <span className="text-white">Event Calender</span>
+                                </li>
+                                {isAdmin ? (
+                                    <li
                                         className={`py-2 pl-4 cursor-pointer ${selectedMenu === 'users' ? 'bg-jukti-orange' : 'hover:bg-gray-800'
                                             }`}
                                         onClick={() => handleMenuSelection('users')}
@@ -183,12 +208,13 @@ const Dashboard = () => {
                         )}
                     </div>
                     <div className=" bg-gray-900 min-h-full mb-4">
-                        {/* Content based on selected menu */}
                         {selectedMenu === 'Payment' && <PaymentContent handleMenuSelection={handleMenuSelection} />}
                         {selectedMenu === 'PaymentMethod' && <PaymentMethodContent />}
                         {selectedMenu === 'PaymentHistory' && <PaymentHistoryContent />}
                         {selectedMenu === 'profile' && <ProfileContent />}
                         {selectedMenu === 'allpayment' && <AllPaymentContent />}
+                        {selectedMenu === 'reports' && <ReportsContent />}
+                        {selectedMenu === 'calender' && <CalenderContent department={department} isAdmin={isAdmin} />}
                         {selectedMenu === 'settings' && <SettingsContent />}
                         {selectedMenu === 'users' && <UsersContent />}
                         {selectedMenu === 'pendingpayment' && <PendingPaymentContent />}
@@ -485,7 +511,7 @@ const PaymentMethodContent = () => {
                                         <h3 className="text-xl">{paymentMethod.name}</h3>
                                     </Disclosure.Button>
                                     <Disclosure.Panel className="px-4 pt-4 pb-2 text-white text-lg">
-                                        <div className="formatted-text" style={{whiteSpace:'pre-wrap'}} dangerouslySetInnerHTML={{ __html: paymentMethod.description }}></div>
+                                        <div className="formatted-text" style={{ whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: paymentMethod.description }}></div>
                                     </Disclosure.Panel>
                                 </>
                             )}
@@ -663,7 +689,7 @@ const AllPaymentContent = () => {
     useEffect(() => {
         // Fetch all users from the database
         const fetchAllUsers = () => {
-            const db = getDatabase();
+            const db = getDatabase(app);
             const usersRef = ref(db, 'users');
 
             onValue(usersRef, (snapshot) => {
@@ -1175,7 +1201,7 @@ const SettingsContent = () => {
     const [newPaymentMethodDescription, setNewPaymentMethodDescription] = useState('');
 
     useEffect(() => {
-        const db = getDatabase();
+        const db = getDatabase(app);
         const departmentsRef = ref(db, 'departments');
         const positionsRef = ref(db, 'positions');
         const paymentMethodsRef = ref(db, 'paymentMethods');
@@ -1226,7 +1252,7 @@ const SettingsContent = () => {
 
     const handleAddDepartment = () => {
         if (newDepartment.trim() !== '') {
-            const db = getDatabase();
+            const db = getDatabase(app);
             const departmentsRef = ref(db, 'departments');
             push(departmentsRef, newDepartment);
             setNewDepartment('');
@@ -1235,7 +1261,7 @@ const SettingsContent = () => {
 
     const handleAddPosition = () => {
         if (newPosition.trim() !== '') {
-            const db = getDatabase();
+            const db = getDatabase(app);
             const positionsRef = ref(db, 'positions');
             push(positionsRef, newPosition);
             setNewPosition('');
@@ -1244,7 +1270,7 @@ const SettingsContent = () => {
 
     const handleAddPaymentMethod = () => {
         if (newPaymentMethod.trim() !== '' && newPaymentMethodDescription.trim() !== '') {
-            const db = getDatabase();
+            const db = getDatabase(app);
             const paymentMethodsRef = ref(db, 'paymentMethods');
             push(paymentMethodsRef, {
                 name: newPaymentMethod,
@@ -1256,19 +1282,19 @@ const SettingsContent = () => {
     };
 
     const handleDeleteDepartment = (departmentId) => {
-        const db = getDatabase();
+        const db = getDatabase(app);
         const departmentRef = ref(db, `departments/${departmentId}`);
         remove(departmentRef);
     };
 
     const handleDeletePosition = (positionId) => {
-        const db = getDatabase();
+        const db = getDatabase(app);
         const positionRef = ref(db, `positions/${positionId}`);
         remove(positionRef);
     };
 
     const handleDeletePaymentMethod = (paymentMethodId) => {
-        const db = getDatabase();
+        const db = getDatabase(app);
         const paymentMethodRef = ref(db, `paymentMethods/${paymentMethodId}`);
         remove(paymentMethodRef);
     };
@@ -1345,7 +1371,7 @@ const SettingsContent = () => {
                         <li key={paymentMethod.id} className="flex items-center justify-between py-2">
                             <div>
                                 <span className="text-white font-bold text-xl">{paymentMethod.name}</span>
-                                <div className="formatted-text text-white" style={{whiteSpace:'pre-wrap'}} dangerouslySetInnerHTML={{ __html: paymentMethod.description }}></div>
+                                <div className="formatted-text text-white" style={{ whiteSpace: 'pre-wrap' }} dangerouslySetInnerHTML={{ __html: paymentMethod.description }}></div>
                             </div>
                             <button
                                 className="text-red-500"
@@ -1468,6 +1494,381 @@ const UsersContent = () => {
                     </div>
                 </div>
             ))}
+        </div>
+    );
+};
+
+const ReportsContent = () => {
+    return (
+        <div>
+            <h2 className="text-2xl text-white">Reports</h2>
+        </div>
+    );
+};
+
+const CalenderContent = ({ department, isAdmin }) => {
+    const [eventName, setEventName] = useState('');
+    const [eventDetails, setEventDetails] = useState('');
+    const [eventStartDateTime, setEventStartDateTime] = useState('');
+    const [eventEndDateTime, setEventEndDateTime] = useState('');
+    const [eventType, setEventType] = useState('');
+    const [events, setEvents] = useState([]);
+    const [eventTypes, setEventTypes] = useState([]);
+    const [newEventType, setNewEventType] = useState('');
+    const [newEventTypeColor, setNewEventTypeColor] = useState('#000000');
+
+    const handleEventNameChange = (e) => {
+        setEventName(e.target.value);
+    };
+
+    const handleEventDetailsChange = (e) => {
+        setEventDetails(e.target.value);
+    };
+
+    const handleEventDateTimeChange = (fieldName, value) => {
+        if (fieldName === 'start') {
+            setEventStartDateTime(value);
+        } else if (fieldName === 'end') {
+            setEventEndDateTime(value);
+        }
+    };
+
+    const handleEventTypeChange = (e) => {
+        setEventType(e.target.value);
+    };
+
+    const handleCreateEvent = (e) => {
+        e.preventDefault();
+
+        if (!eventName || !eventStartDateTime || !eventEndDateTime || !eventType) {
+            alert('Please enter event name, start time, end time, and type.');
+            return;
+        }
+
+        const newEvent = {
+            title: eventName,
+            details: eventDetails,
+            start: eventStartDateTime,
+            end: eventEndDateTime,
+            type: eventType,
+        };
+
+        const db = getDatabase(app);
+        const eventsRef = ref(db, 'events');
+        push(eventsRef, newEvent);
+
+        setEventName('');
+        setEventDetails('');
+        setEventStartDateTime('');
+        setEventEndDateTime('');
+        setEventType('');
+    };
+
+    useEffect(() => {
+        const db = getDatabase(app);
+        const eventsRef = ref(db, 'events');
+
+        onValue(eventsRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const eventData = snapshot.val();
+                const allEvents = Object.keys(eventData).map((eventId) => {
+                    const event = eventData[eventId];
+                    const startDateTime = moment(event.start).toDate();
+                    const endDateTime = moment(event.end).toDate();
+                    return {
+                        id: eventId,
+                        ...event,
+                        start: startDateTime,
+                        end: endDateTime,
+                    };
+                });
+                setEvents(allEvents);
+            } else {
+                setEvents([]);
+            }
+        });
+
+        const eventTypesRef = ref(db, 'eventTypes');
+
+        onValue(eventTypesRef, (snapshot) => {
+            if (snapshot.exists()) {
+                const eventData = snapshot.val();
+                const allEventTypes = Object.keys(eventData).map((eventTypeId) => {
+                    const eventType = eventData[eventTypeId];
+                    return {
+                        id: eventTypeId,
+                        ...eventType,
+                    };
+                });
+                setEventTypes(allEventTypes);
+            } else {
+                setEventTypes([]);
+            }
+        });
+    }, []);
+
+    const handleCreateEventType = async (e) => {
+        e.preventDefault();
+
+        if (newEventType.trim() !== '' && newEventTypeColor.trim() !== '') {
+            const db = getDatabase(app);
+            const eventTypesRef = ref(db, 'eventTypes');
+
+            const type = {
+                name: newEventType,
+                color: newEventTypeColor,
+            };
+
+            const newEventTypeKey = push(eventTypesRef);
+            const newEventTypeChildRef = newEventTypeKey.key;
+
+            try {
+                await set(newEventTypeKey, type);
+                setNewEventType('');
+                setNewEventTypeColor('#000000');
+            }
+            catch (error) {
+                console.log(error);
+            }
+        }
+    };
+
+    const handleDeleteEventType = (eventTypeId) => {
+        const db = getDatabase(app);
+        const eventTypeRef = ref(db, `eventTypes/${eventTypeId}`);
+        remove(eventTypeRef);
+    };
+
+    const getEventColor = (event) => {
+        const getEventType = eventTypes.find((eventType) => eventType.name === event.type);
+        if (getEventType) {
+            return {
+                style: {
+                    backgroundColor: getEventType.color,
+                },
+            }
+        }
+        return {};
+    };
+
+    const handleDeleteEvent = (eventId) => {
+        const db = getDatabase(app);
+        const eventRef = ref(db, `events/${eventId}`);
+        remove(eventRef);
+    };
+
+    const [showModal, setShowModal] = useState(false);
+    const [selectedEvent, setSelectedEvent] = useState({});
+
+    const MyModal = () => {
+        return (
+            <div className="fixed inset-0 flex justify-center items-center bg-gray-300 bg-opacity-75">
+                <div className="bg-gray-900 p-8 rounded-lg">
+                    <div className="text-white">
+                        <h2 className="text-2xl">Event: {selectedEvent.title}</h2>
+                        <div className="text-lg">Type: {selectedEvent.type}</div>
+                        <div className="text-lg">Details: {selectedEvent.details}</div>
+                        <div className="text-lg">
+                            Start Date : {moment(selectedEvent.start).format('Do MMMM YYYY')}
+                        </div>
+                        <div className="text-lg">
+                            Start Time : {moment(selectedEvent.start).format('h:mm a')}
+                        </div>
+                        <div className="text-lg">
+                            End Date : {moment(selectedEvent.end).format('Do MMMM YYYY')}
+                        </div>
+                        <div className="text-lg">
+                            End Time : {moment(selectedEvent.end).format('h:mm a')}
+                        </div>
+                        <div className="flex justify-between pt-2">
+                            {(department === 'Public Relations' || isAdmin) && (
+                            <button
+                                className="bg-red-500 hover:bg-red-700 text-white font-bold px-2 py-1 rounded focus:outline-none"
+                                onClick={() => handleDeleteEvent(selectedEvent.id)}
+                            >
+                                Delete
+                            </button>
+                            )}
+                            <button
+                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold px-8 py-1 rounded focus:outline-none"
+                                onClick={() => setShowModal(false)}
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    return (
+        <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
+            <h2 className="text-2xl text-white">Event Calendar</h2>
+            <div className="my-4">
+                <div style={{ height: 500 }}>
+                    <Calendar
+                        localizer={localizer}
+                        events={events}
+                        onSelectEvent={(event) => {
+                            setSelectedEvent(event);
+                            setShowModal(true);
+                        }}
+                        startAccessor="start"
+                        endAccessor="end"
+                        defaultView={Views.MONTH}
+                        views={[Views.MONTH, Views.WEEK, Views.DAY]}
+                        className="react-big-calendar rounded-lg p-6 w-full bg-white"
+                        eventPropGetter={getEventColor}
+                    />
+                </div>
+                {showModal && <MyModal />}
+                {(department === 'Public Relations' || isAdmin) && (
+                    <div className="my-4">
+                        <h3 className="text-lg text-white">Create Event</h3>
+                        <form onSubmit={handleCreateEvent} className="grid sm:grid-cols-1 lg:grid-cols-6 py-2">
+                            <div className="flex flex-col">
+                                <label className="block text-white mb-1" htmlFor="eventName">
+                                    Event Name:
+                                </label>
+                                <input
+                                    className="px-2 py-1 rounded"
+                                    type="text"
+                                    id="eventName"
+                                    value={eventName}
+                                    onChange={handleEventNameChange}
+                                />
+                            </div>
+                            <div className="flex flex-col lg:ml-2">
+                                <label className="block text-white mb-1" htmlFor="eventType">
+                                    Event Type:
+                                </label>
+                                <select
+                                    className="px-2 py-2 rounded"
+                                    id="eventType"
+                                    value={eventType}
+                                    onChange={handleEventTypeChange}
+                                >
+                                    <option value="">Select Event Type</option>
+                                    {eventTypes.map((eventType) => (
+                                        <option key={eventType.id} value={eventType.name}>
+                                            {eventType.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex flex-col lg:ml-2">
+                                <label className="block text-white mb-1" htmlFor="eventDetails">
+                                    Event Details:
+                                </label>
+                                <textarea
+                                    className="px-2 rounded"
+                                    type="text"
+                                    id="eventDetails"
+                                    value={eventDetails}
+                                    onChange={handleEventDetailsChange}
+                                />
+                            </div>
+                            <div className="flex flex-col lg:ml-2">
+                                <label className="block text-white mb-1" htmlFor="eventStartDateTime">
+                                    Start DateTime:
+                                </label>
+                                <input
+                                    className="px-2 py-1 rounded"
+                                    type='datetime-local'
+                                    id="eventStartDateTime"
+                                    value={eventStartDateTime}
+                                    onChange={(e) => handleEventDateTimeChange('start', e.target.value)}
+                                />
+                            </div>
+                            <div className="flex flex-col lg:ml-2">
+                                <label className="block text-white mb-1" htmlFor="eventEndDateTime">
+                                    End DateTime:
+                                </label>
+                                <input
+                                    className="px-2 py-1 rounded"
+                                    type="datetime-local"
+                                    id="eventEndDateTime"
+                                    value={eventEndDateTime}
+                                    onChange={(e) => handleEventDateTimeChange('end', e.target.value)}
+                                />
+                            </div>
+                            <div className="flex flex-col mt-7 lg:ml-2">
+                                <button
+                                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold px-8 py-1 rounded focus:outline-none"
+                                    type="submit"
+                                >
+                                    Create
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                )}
+                <div className="my-4" />
+                <h3 className="text-lg text-white">Event Types</h3>
+                {(department === 'Public Relations' || isAdmin) && (
+                    <form onSubmit={handleCreateEventType} className="grid sm:grid-cols-1 lg:grid-cols-6 py-2">
+                        <div className="flex flex-col">
+                            <label className="block text-white mb-1" htmlFor="newEventType">
+                                Event Type:
+                            </label>
+                            <input
+                                className="px-2 py-1 rounded"
+                                type="text"
+                                id="newEventType"
+                                value={newEventType}
+                                onChange={(e) => setNewEventType(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-col lg:ml-2">
+                            <label className="block text-white mb-1" htmlFor="newEventTypeColor">
+                                Color:
+                            </label>
+                            <input
+                                className="px-2 py-1 rounded"
+                                type="color"
+                                id="newEventTypeColor"
+                                value={newEventTypeColor}
+                                onChange={(e) => setNewEventTypeColor(e.target.value)}
+                            />
+                        </div>
+                        <div className="flex flex-col mt-7 lg:ml-2">
+                            <button
+                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold px-8 py-1 rounded focus:outline-none"
+                                type="submit"
+                            >
+                                Create
+                            </button>
+                        </div>
+                    </form>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
+                    {eventTypes.map((eventType) => (
+                        <div
+                            key={eventType.id}
+                            className="flex flex-col bg-white rounded-lg p-2"
+                        >
+                            <div className="flex justify-between">
+                                <div className="text-lg font-bold">{eventType.name}</div>
+                                <div
+                                    className="rounded-full h-6 w-6"
+                                    style={{ backgroundColor: eventType.color }}
+                                />
+                            </div>
+                            {(department === 'Public Relations' || isAdmin) && (
+                                <div className="flex justify-end">
+                                    <button
+                                        className="bg-red-500 hover:bg-red-700 text-white font-bold px-2 py-1 rounded focus:outline-none"
+                                        onClick={() => handleDeleteEventType(eventType.id)}
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 };
