@@ -14,6 +14,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
+import { format } from 'date-fns';
 
 const localizer = momentLocalizer(moment);
 
@@ -745,16 +746,16 @@ const AllPaymentContent = () => {
                 fetchAllPayments();
                 const filterName = selectedUser.toLowerCase();
                 filteredUsers = filteredUsers.filter(user => {
-                  const userName = user.name.toLowerCase();
-                  let matchCount = 0;
-                  for (let index = 0; index < filterName.length; index++) {
-                    if (userName[index] === filterName[index]) {
-                      matchCount++;
-                    } else {
-                      break; // Exit the loop if a letter doesn't match
+                    const userName = user.name.toLowerCase();
+                    let matchCount = 0;
+                    for (let index = 0; index < filterName.length; index++) {
+                        if (userName[index] === filterName[index]) {
+                            matchCount++;
+                        } else {
+                            break; // Exit the loop if a letter doesn't match
+                        }
                     }
-                  }
-                  return matchCount === filterName.length; // Include the user if all letters match
+                    return matchCount === filterName.length; // Include the user if all letters match
                 });
                 if (filteredUsers.length > 0) {
                     filteredPayments = filteredPayments.filter(payment => {
@@ -850,8 +851,16 @@ const AllPaymentContent = () => {
                 const pagePayments = payments.slice(start, end);
 
                 // Add page content
-                doc.text("All Payments", 14, 15);
-                doc.autoTable(tableColumn, generateTableRows(pagePayments), { startY: 20 });
+                doc.addImage('jukti.png', 'PNG', 10, 8, 33, 19); // Add JUKTI logo on the left
+                doc.setFontSize(12);
+                doc.text('Funds Payment Records', doc.internal.pageSize.getWidth() - 118, 19, { align: 'right' }); // Add text aligned to the right
+                doc.text('Date: ' + moment(new Date()).format("MMMM DD YYYY"), doc.internal.pageSize.getWidth() - 10, 19, { align: 'right' }); // Add text aligned to the right
+                doc.autoTable(tableColumn, generateTableRows(pagePayments), { startY: 30 });
+                doc.setFontSize(10);
+                doc.text(`Page ${i + 1} of ${totalPages}`, doc.internal.pageSize.getWidth()-10, doc.internal.pageSize.getHeight() - 10, {
+                    align: 'right',
+                }); // Add page number at the bottom
+                
 
                 // Add new page if not the last page
                 if (i !== totalPages - 1) {
@@ -862,7 +871,7 @@ const AllPaymentContent = () => {
 
         generatePDFPages();
 
-        doc.save(`all-payments-${new Date().getTime()}.pdf`);
+        doc.save(`jukti-funds-payment-records-${new Date().getTime()}.pdf`);
     };
 
     return (
@@ -1664,6 +1673,9 @@ const UsersContent = () => {
                                 <div className="bg-gray-800 rounded-lg p-6 text-white">
                                     <h3 className="text-xl font-semibold mb-2">{user.name}</h3>
                                     <p className="text-md mb-1">
+                                        <strong>Email:</strong> {user.email}
+                                    </p>
+                                    <p className="text-md mb-1">
                                         <strong>Position:</strong> {user.position}
                                     </p>
                                     <p className="text-md mb-1">
@@ -1691,12 +1703,163 @@ const UsersContent = () => {
 };
 
 const ReportsContent = () => {
+    const [monthlySummary, setMonthlySummary] = useState({});
+    const [selectedMonth, setSelectedMonth] = useState('');
+    const [selectedYear, setSelectedYear] = useState('');
+
+    useEffect(() => {
+        const fetchPaymentData = () => {
+            const db = getDatabase(app);
+            const paymentsRef = ref(db, 'payments');
+
+            onValue(paymentsRef, (snapshot) => {
+                if (snapshot.exists()) {
+                    const paymentData = snapshot.val();
+                    const payments = Object.values(paymentData);
+                    const filteredPayments = applyFilters(payments);
+                    const summary = calculateMonthlySummary(filteredPayments);
+                    setMonthlySummary(summary);
+                } else {
+                    setMonthlySummary({});
+                }
+            });
+        };
+
+        fetchPaymentData();
+    }, [selectedMonth, selectedYear]);
+
+    const calculateMonthlySummary = (payments) => {
+        const summary = {};
+
+        for (const payment of payments) {
+            const { month, year, amount, paymentMethod } = payment;
+            const key = `${month}-${year}`;
+
+            if (summary[key]) {
+                if (summary[key][paymentMethod]) {
+                    summary[key][paymentMethod] += amount;
+                } else {
+                    summary[key][paymentMethod] = amount;
+                }
+            } else {
+                summary[key] = {
+                    [paymentMethod]: amount,
+                };
+            }
+        }
+
+        // Calculate the total for each payment method
+        for (const key in summary) {
+            const paymentMethods = summary[key];
+            let total = 0;
+            for (const method in paymentMethods) {
+                if (method !== 'total') {
+                    total += paymentMethods[method];
+                }
+            }
+            paymentMethods.total = total;
+        }
+
+        return summary;
+    };
+
+    const applyFilters = (payments) => {
+        let filteredPayments = [...payments];
+        if (selectedMonth !== '') {
+            filteredPayments = filteredPayments.filter((payment) => payment.month === selectedMonth);
+        }
+        if (selectedYear !== '') {
+            filteredPayments = filteredPayments.filter((payment) => payment.year === selectedYear);
+        }
+        return filteredPayments;
+    };
+
     return (
-        <div>
-            <h2 className="text-2xl text-white">Reports</h2>
+        <div className='max-w-6xl grid w-screen grid-cols-1 pr-8'>
+            <h2 className="text-2xl text-white mb-6">Reports</h2>
+            <div className="flex flex-wrap justify-between items-center mb-4">
+                <div className="flex flex-wrap mb-4">
+                    <div className="mr-4">
+                        <label htmlFor="month" className="block text-white">
+                            Month:
+                        </label>
+                        <select
+                            id="month"
+                            value={selectedMonth}
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                        >
+                            <option value="">All</option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">August</option>
+                            <option value="September">September</option>
+                            <option value="October">October</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    </div>
+                    <div className="mr-4">
+                        <label htmlFor="year" className="block text-white">
+                            Year:
+                        </label>
+                        <select
+                            id="year"
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                        >
+                            <option value="">All</option>
+                            {Array.from({ length: 6 }).map((_, index) => {
+                                const year = new Date().getFullYear() - index;
+                                return <option key={year} value={year}>{year}</option>;
+                            })}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div className="overflow-x-auto flex justify-center">
+                <div className="max-w-full mx-auto">
+                    <table className="block">
+                        <thead>
+                            <tr>
+                                <th className="text-gray-300 text-center py-2 px-2 border-b">Month</th>
+                                <th className="text-gray-300 text-center py-2 px-2 border-b">Year</th>
+                                <th className="text-gray-300 text-center py-2 px-2 border-b">bKash</th>
+                                <th className="text-gray-300 text-center py-2 px-2 border-b">Nagad</th>
+                                <th className="text-gray-300 text-center py-2 px-2 border-b">Rocket</th>
+                                <th className="text-gray-300 text-center py-2 px-2 border-b">Bank</th>
+                                <th className="text-gray-300 text-center py-2 px-2 border-b">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {Object.entries(monthlySummary).map(([key, paymentMethods]) => {
+                                const [month, year] = key.split('-');
+                                return (
+                                    <tr key={key}>
+                                        <td className="text-white py-2 px-2 border-b">{month}</td>
+                                        <td className="text-white py-2 px-2 border-b">{year}</td>
+                                        <td className="text-white py-2 px-2 border-b">{paymentMethods.bKash || 0}</td>
+                                        <td className="text-white py-2 px-2 border-b">{paymentMethods.nagad || 0}</td>
+                                        <td className="text-white py-2 px-2 border-b">{paymentMethods.rocket || 0}</td>
+                                        <td className="text-white py-2 px-2 border-b">{paymentMethods.bank || 0}</td>
+                                        <td className="text-white py-2 px-2 border-b">{paymentMethods.total || 0}</td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 };
+
 
 const CalenderContent = ({ department, isAdmin }) => {
     const [eventName, setEventName] = useState('');
