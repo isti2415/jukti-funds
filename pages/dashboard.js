@@ -2232,9 +2232,9 @@ const CalenderContent = ({ department, isAdmin }) => {
 
 
     return (
-        <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
+        <div className="max-w-6xl grid w-screen grid-cols-1 pr-16">
             <h2 className="text-2xl text-white mb-6">Event Calendar</h2>
-            <div className="my-4">
+            <div className="mb-4">
                 <div style={{ height: 500 }}>
                     <Calendar
                         localizer={localizer}
