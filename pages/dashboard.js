@@ -9,6 +9,11 @@ import jsCookie from 'js-cookie';
 import { Calendar, momentLocalizer, Views } from 'react-big-calendar';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 import moment from 'moment';
+import { saveAs } from 'file-saver';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
 
 const localizer = momentLocalizer(moment);
 
@@ -606,32 +611,32 @@ const PendingPaymentContent = () => {
         <div className='max-w-6xl grid w-screen grid-cols-1 pr-8'>
             <h2 className="text-2xl text-white mb-6">Pending Payments</h2>
             {pendingPayments.length > 0 ? (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto flex justify-center">
                     <div className="max-w-full mx-auto">
                         <table className="block">
                             <thead>
                                 <tr>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">User</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Payment Method</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Number</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Transaction ID</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Month</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Year</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Amount</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Actions</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">User</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Payment Method</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Number</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Transaction ID</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Month</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Year</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Amount</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {pendingPayments.map((payment) => (
                                     <tr key={payment.id}>
-                                        <td className="text-white py-2 px-4 border-b">{payment.email}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.paymentMethod}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.number}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.transactionId}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.month}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.year}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.amount} BDT</td>
-                                        <td className="text-white py-2 px-4 border-b">
+                                        <td className="text-white py-2 px-2 border-b">{payment.email}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.paymentMethod}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.number}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.transactionId}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.month}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.year}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.amount} BDT</td>
+                                        <td className="text-white py-2 px-2 border-b">
                                             <button
                                                 className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline mr-2 mb-2"
                                                 onClick={() => handleAccept(payment.id)}
@@ -665,9 +670,10 @@ const AllPaymentContent = () => {
     const [selectedYear, setSelectedYear] = useState('');
     const [selectedUser, setSelectedUser] = useState('');
     const [allUsers, setAllUsers] = useState([]);
+    const [departments, setDepartments] = useState([]);
+    const [selectedDepartment, setSelectedDepartment] = useState('');
 
     useEffect(() => {
-        // Fetch all payment records from the database
         const fetchAllPayments = () => {
             const db = getDatabase(app);
             const paymentsRef = ref(db, 'payments');
@@ -678,18 +684,29 @@ const AllPaymentContent = () => {
                     const allPayments = Object.entries(paymentsData)
                         .filter(([_, payment]) => payment.status === 'Accepted')
                         .map(([id, payment]) => ({ id, ...payment }));
-                    setPayments(allPayments);
+                    setPayments(allPayments.reverse());
                 } else {
                     setPayments([]);
                 }
             });
         };
 
-        fetchAllPayments();
-    }, []);
+        const fetchDepartments = () => {
+            const db = getDatabase(app);
+            const departmentsRef = ref(db, 'departments');
 
-    useEffect(() => {
-        // Fetch all users from the database
+            onValue(departmentsRef, (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    const departments = Object.entries(data).map(([id, name]) => ({
+                        id,
+                        name,
+                    }));
+                    setDepartments(departments);
+                }
+            });
+        };
+
         const fetchAllUsers = () => {
             const db = getDatabase(app);
             const usersRef = ref(db, 'users');
@@ -706,39 +723,68 @@ const AllPaymentContent = () => {
         };
 
         fetchAllUsers();
-    }, []);
+        fetchDepartments();
 
+        if (selectedMonth === '' && selectedYear === '' && selectedUser === '' && selectedDepartment === '') {
+            fetchAllPayments();
+        }
+        else {
+            let filteredPayments = [...payments];
+            let filteredUsers = [...allUsers];
+            if (selectedMonth !== '') {
+                fetchAllPayments();
+                filteredPayments = filteredPayments.filter(payment => payment.month === selectedMonth);
+            }
 
-    const handleSearchUser = (e) => {
-        setSelectedUser(e.target.value);
-    };
+            if (selectedYear !== '') {
+                fetchAllPayments();
+                filteredPayments = filteredPayments.filter(payment => payment.year === selectedYear);
+            }
 
-    const handleFilter = () => {
-        // Filter payments based on selected month, year, and user
-        let filteredPayments = [...payments];
-        let filteredUser = [...allUsers];
+            if (selectedUser !== '') {
+                fetchAllPayments();
+                const filterName = selectedUser.toLowerCase();
+                filteredUsers = filteredUsers.filter(user => {
+                  const userName = user.name.toLowerCase();
+                  let matchCount = 0;
+                  for (let index = 0; index < filterName.length; index++) {
+                    if (userName[index] === filterName[index]) {
+                      matchCount++;
+                    } else {
+                      break; // Exit the loop if a letter doesn't match
+                    }
+                  }
+                  return matchCount === filterName.length; // Include the user if all letters match
+                });
+                if (filteredUsers.length > 0) {
+                    filteredPayments = filteredPayments.filter(payment => {
+                        const user = filteredUsers.find(user => user.email === payment.email);
+                        return user;
+                    });
+                }
+                else {
+                    fetchAllPayments();
+                    return;
+                }
+            }
 
-        if (selectedMonth !== '') {
-            filteredPayments = filteredPayments.filter((payment) => payment.month === selectedMonth);
+            if (selectedDepartment !== '') {
+                fetchAllPayments();
+                filteredPayments = filteredPayments.filter(payment => {
+                    const user = allUsers.find(user => user.email === payment.email);
+                    return user && user.department === selectedDepartment;
+                });
+            }
+            setPayments(filteredPayments);
         }
 
-        if (selectedYear !== '') {
-            filteredPayments = filteredPayments.filter((payment) => payment.year === selectedYear);
-        }
-
-        if (selectedUser !== '') {
-            filteredUser = filteredUser.filter((user) => user.name === selectedUser);
-            filteredPayments = filteredPayments.filter((payment) => payment.email === filteredUser[0].email);
-        }
-
-        // Set the filtered payments
-        setPayments(filteredPayments);
-    };
+    }, [selectedMonth, selectedYear, selectedUser, selectedDepartment, payments, allUsers]);
 
     const handleResetFilter = () => {
         setSelectedMonth('');
         setSelectedYear('');
         setSelectedUser('');
+        setSelectedDepartment('');
         // Fetch all payments to reset the view
         const fetchAllPayments = () => {
             const db = getDatabase(app);
@@ -750,7 +796,7 @@ const AllPaymentContent = () => {
                     const allPayments = Object.entries(paymentsData)
                         .filter(([_, payment]) => payment.status === 'Accepted')
                         .map(([id, payment]) => ({ id, ...payment }));
-                    setPayments(allPayments);
+                    setPayments(allPayments.reverse());
                 } else {
                     setPayments([]);
                 }
@@ -764,121 +810,190 @@ const AllPaymentContent = () => {
         return user ? user : null;
     };
 
+    const [currentPage, setCurrentPage] = useState(0);
+    const perPage = 20; // Number of items per page
+    const offset = currentPage * perPage;
+    const paginatedPayments = payments.slice(offset, offset + perPage);
+    const pageCount = Math.ceil(payments.length / perPage);
+
+    const handleDownloadPDF = () => {
+        const doc = new jsPDF();
+
+        const tableColumn = ["Name", "Position", "Department", "Month", "Year", "Method", "Number", "Trx ID", "Amount"];
+
+        const generateTableRows = (payments) => {
+            const tableRows = [];
+            payments.forEach(payment => {
+                const user = getUser(payment.email);
+                const paymentData = [
+                    user ? user.name : '',
+                    user ? user.position : '',
+                    user ? user.department : '',
+                    payment.month,
+                    payment.year,
+                    payment.paymentMethod,
+                    payment.number,
+                    payment.transactionId,
+                    payment.amount,
+                ];
+                tableRows.push(paymentData);
+            });
+            return tableRows;
+        };
+
+        const generatePDFPages = () => {
+            const totalPages = Math.ceil(payments.length / perPage);
+
+            for (let i = 0; i < totalPages; i++) {
+                const start = i * perPage;
+                const end = start + perPage;
+                const pagePayments = payments.slice(start, end);
+
+                // Add page content
+                doc.text("All Payments", 14, 15);
+                doc.autoTable(tableColumn, generateTableRows(pagePayments), { startY: 20 });
+
+                // Add new page if not the last page
+                if (i !== totalPages - 1) {
+                    doc.addPage();
+                }
+            }
+        };
+
+        generatePDFPages();
+
+        doc.save(`all-payments-${new Date().getTime()}.pdf`);
+    };
+
     return (
         <div className='max-w-6xl grid w-screen grid-cols-1 pr-8'>
             <h2 className="text-2xl text-white mb-6">All Payments</h2>
-            <div className="flex mb-4">
-                <div className="mr-4">
-                    <label htmlFor="month" className="block text-white mb-2">
-                        Month:
-                    </label>
-                    <select
-                        id="month"
-                        value={selectedMonth}
-                        onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
-                    >
-                        <option value="">All</option>
-                        <option value="January">January</option>
-                        <option value="February">February</option>
-                        <option value="March">March</option>
-                        <option value="April">April</option>
-                        <option value="May">May</option>
-                        <option value="June">June</option>
-                        <option value="July">July</option>
-                        <option value="August">Augest</option>
-                        <option value="September">September</option>
-                        <option value="October">Octobor</option>
-                        <option value="November">November</option>
-                        <option value="December">December</option>
-                    </select>
+            <div className="flex flex-wrap justify-between items-center mb-4">
+                <div className="flex flex-wrap mb-4">
+                    <div className="mr-4">
+                        <label htmlFor="month" className="block text-white">
+                            Month:
+                        </label>
+                        <select
+                            id="month"
+                            value={selectedMonth}
+                            onChange={(e) => setSelectedMonth(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                        >
+                            <option value="">All</option>
+                            <option value="January">January</option>
+                            <option value="February">February</option>
+                            <option value="March">March</option>
+                            <option value="April">April</option>
+                            <option value="May">May</option>
+                            <option value="June">June</option>
+                            <option value="July">July</option>
+                            <option value="August">Augest</option>
+                            <option value="September">September</option>
+                            <option value="October">Octobor</option>
+                            <option value="November">November</option>
+                            <option value="December">December</option>
+                        </select>
+                    </div>
+                    <div className="mr-4">
+                        <label htmlFor="year" className="block text-white">
+                            Year:
+                        </label>
+                        <select
+                            id="year"
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                        >
+                            <option value="">All</option>
+                            {Array.from({ length: 6 }).map((_, index) => {
+                                const year = new Date().getFullYear() - index;
+                                return <option key={year} value={year}>{year}</option>;
+                            })}
+                        </select>
+                    </div>
+                    <div className="mr-4">
+                        <label htmlFor="department" className="block text-white">
+                            Department:
+                        </label>
+                        <select
+                            id="department"
+                            value={selectedDepartment}
+                            onChange={(e) => setSelectedDepartment(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                        >
+                            <option value="">All</option>
+                            {departments.map((department) => (
+                                <option key={department.id} name={department.name} value={department.name}>
+                                    {department.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className='mr-4'>
+                        <label htmlFor="user" className="block text-white">
+                            User:
+                        </label>
+                        <input
+                            type="text"
+                            id="user"
+                            value={selectedUser}
+                            onChange={(e) => setSelectedUser(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                            placeholder="Search user..."
+                            list="user-suggestions"
+                        />
+                        <datalist id="user-suggestions">
+                            {allUsers.map((user) => (
+                                <option key={user.id} value={user.name} />
+                            ))}
+                        </datalist>
+                    </div>
                 </div>
-                <div className="mr-4">
-                    <label htmlFor="year" className="block text-white mb-2">
-                        Year:
-                    </label>
-                    <select
-                        id="year"
-                        value={selectedYear}
-                        onChange={(e) => setSelectedYear(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                <div className="mb-4 flex justify-between">
+                    <button
+                        className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none mr-2"
+                        onClick={handleResetFilter}
                     >
-                        <option value="">All</option>
-                        {Array.from({ length: 6 }).map((_, index) => {
-                            const year = new Date().getFullYear() - index;
-                            return <option key={year} value={year}>{year}</option>;
-                        })}
-                    </select>
-                </div>
-                <div>
-                    <label htmlFor="user" className="block text-white mb-2">
-                        User:
-                    </label>
-                    <input
-                        type="text"
-                        id="user"
-                        value={selectedUser}
-                        onChange={handleSearchUser}
-                        className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
-                        placeholder="Search user..."
-                        list="user-suggestions"
-                    />
-                    <datalist id="user-suggestions">
-                        {allUsers.map((user) => (
-                            <option key={user.id} value={user.name} />
-                        ))}
-                    </datalist>
+                        Reset Filter
+                    </button>
+                    <button
+                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none"
+                        onClick={handleDownloadPDF}
+                    >
+                        <FontAwesomeIcon icon={faFilePdf} className="w-8 h-8" />
+                    </button>
                 </div>
             </div>
-            <div className="mb-4">
-                <button
-                    className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none"
-                    onClick={handleFilter}
-                >
-                    Apply Filter
-                </button>
-                <button
-                    className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none ml-4"
-                    onClick={handleResetFilter}
-                >
-                    Reset Filter
-                </button>
-            </div>
-            {payments.length > 0 ? (
-                <div className="overflow-x-auto">
+            {paginatedPayments.length > 0 ? (
+                <div className="overflow-x-auto flex justify-center">
                     <div className="max-w-full mx-auto">
                         <table className="block">
                             <thead>
                                 <tr>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Name</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Position</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Department</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Month</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Year</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Method</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Number</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Trx ID</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Amount</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Name</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Position</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Department</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Month</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Year</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Method</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Number</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Trx ID</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {payments.map((payment) => (
+                                {paginatedPayments.map((payment) => (
                                     <tr key={payment.id}>
-                                        <td className="text-white py-2 px-4 border-b">
-                                            {getUser(payment.email)?.name}
-                                        </td>
-                                        <td className="text-white py-2 px-4 border-b">
-                                            {getUser(payment.email)?.position}
-                                        </td>
-                                        <td className="text-white py-2 px-4 border-b">
-                                            {getUser(payment.email)?.department}
-                                        </td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.month}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.year}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.paymentMethod}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.number}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.transactionId}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.amount}</td>
+                                        <td className="text-white py-2 px-2 border-b">{getUser(payment.email)?.name}</td>
+                                        <td className="text-white py-2 px-2 border-b">{getUser(payment.email)?.position}</td>
+                                        <td className="text-white py-2 px-2 border-b">{getUser(payment.email)?.department}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.month}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.year}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.paymentMethod}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.number}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.transactionId}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.amount}</td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -888,7 +1003,35 @@ const AllPaymentContent = () => {
             ) : (
                 <p className="text-white">No payments found.</p>
             )}
-
+            {payments.length > perPage && (
+                <div class="pagination flex justify-center pt-4">
+                    <button
+                        className={`previous rounded-l py-2 px-4 ${currentPage === 0 ? 'text-gray-400' : 'text-gray-200 hover:text-gray-400'}`}
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 0}
+                    >
+                        Previous
+                    </button>
+                    <div class="page-numbers flex flex-wrap">
+                        {Array(pageCount).fill(0).map((_, page) => (
+                            <button
+                                key={page}
+                                class={page === currentPage ? "bg-blue-500 text-white py-2 px-4 rounded" : "text-gray-200 py-2 px-4 rounded"}
+                                onClick={() => setCurrentPage(page)}
+                            >
+                                {page + 1}
+                            </button>
+                        ))}
+                    </div>
+                    <button
+                        className={`next rounded-r py-2 px-4 ${currentPage === pageCount - 1 ? 'text-gray-400' : 'text-gray-200 hover:text-gray-400'}`}
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === pageCount - 1}
+                    >
+                        Next
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
@@ -947,35 +1090,43 @@ const PaymentHistoryContent = () => {
         return null;
     };
 
+    // Define the starting and ending indexes based on the current page and perPage value
+    const [currentPage, setCurrentPage] = useState(0);
+    const perPage = 20; // Number of items per page
+    const startIndex = currentPage * perPage;
+    const endIndex = startIndex + perPage;
+    const paginatedPayments = pendingPayments.slice(startIndex, endIndex);
 
     return (
-        <div className='max-w-6xl grid w-screen grid-cols-1 pr-8'>
+        <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
             <h2 className="text-2xl text-white mb-6">Payment History</h2>
-            {pendingPayments.length > 0 ? (
-                <div className="overflow-x-auto">
+            {paginatedPayments.length > 0 ? (
+                <div className="overflow-x-auto flex justify-center">
                     <div className="max-w-full mx-auto">
                         <table className="block">
                             <thead>
                                 <tr>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Method</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Month</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Year</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Number</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Trx ID</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Amount</th>
-                                    <th className="text-gray-300 text-left py-2 px-4 border-b">Status</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Method</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Month</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Year</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Number</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Trx ID</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Amount</th>
+                                    <th className="text-gray-300 text-center py-2 px-2 border-b">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {pendingPayments.map((payment) => (
+                                {paginatedPayments.map((payment) => (
                                     <tr key={payment.id}>
-                                        <td className="text-white py-2 px-4 border-b">{payment.paymentMethod}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.month}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.year}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.number}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.transactionId}</td>
-                                        <td className="text-white py-2 px-4 border-b">{payment.amount}</td>
-                                        <td className="text-white py-2 px-4 border-b text-center">{getStatusButton(payment)}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.paymentMethod}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.month}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.year}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.number}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.transactionId}</td>
+                                        <td className="text-white py-2 px-2 border-b">{payment.amount}</td>
+                                        <td className="text-white py-2 px-2 border-b text-center">
+                                            {getStatusButton(payment)}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -984,6 +1135,45 @@ const PaymentHistoryContent = () => {
                 </div>
             ) : (
                 <p className="text-white">No pending payments found.</p>
+            )}
+            {/* Pagination */}
+            {pendingPayments.length > perPage && (
+                <div className="flex justify-center pt-4">
+                    <button
+                        className={`previous rounded-l py-2 px-4 ${currentPage === 0 ? 'text-gray-400' : 'text-gray-200 hover:text-gray-400'
+                            }`}
+                        onClick={() => setCurrentPage(currentPage - 1)}
+                        disabled={currentPage === 0}
+                    >
+                        Previous
+                    </button>
+                    <div className="page-numbers flex flex-wrap">
+                        {Array(Math.ceil(pendingPayments.length / perPage))
+                            .fill(0)
+                            .map((_, page) => (
+                                <button
+                                    key={page}
+                                    className={`${page === currentPage
+                                        ? 'bg-blue-500 text-white'
+                                        : 'text-gray-200 hover:text-gray-400'
+                                        } py-2 px-4 rounded`}
+                                    onClick={() => setCurrentPage(page)}
+                                >
+                                    {page + 1}
+                                </button>
+                            ))}
+                    </div>
+                    <button
+                        className={`next rounded-r py-2 px-4 ${currentPage === Math.ceil(pendingPayments.length / perPage) - 1
+                            ? 'text-gray-400'
+                            : 'text-gray-200 hover:text-gray-400'
+                            }`}
+                        onClick={() => setCurrentPage(currentPage + 1)}
+                        disabled={currentPage === Math.ceil(pendingPayments.length / perPage) - 1}
+                    >
+                        Next
+                    </button>
+                </div>
             )}
         </div>
     );
@@ -1879,7 +2069,7 @@ const CalenderContent = ({ department, isAdmin }) => {
 
     return (
         <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
-            <h2 className="text-2xl text-white">Event Calendar</h2>
+            <h2 className="text-2xl text-white mb-6">Event Calendar</h2>
             <div className="my-4">
                 <div style={{ height: 500 }}>
                     <Calendar
@@ -1912,6 +2102,7 @@ const CalenderContent = ({ department, isAdmin }) => {
                                     id="eventName"
                                     value={eventName}
                                     onChange={handleEventNameChange}
+                                    required
                                 />
                             </div>
                             <div className="flex flex-col lg:ml-2">
@@ -1923,6 +2114,7 @@ const CalenderContent = ({ department, isAdmin }) => {
                                     id="eventType"
                                     value={eventType}
                                     onChange={handleEventTypeChange}
+                                    required
                                 >
                                     <option value="">Select Event Type</option>
                                     {eventTypes.map((eventType) => (
@@ -1946,7 +2138,7 @@ const CalenderContent = ({ department, isAdmin }) => {
                             </div>
                             <div className="flex flex-col lg:ml-2">
                                 <label className="block text-white mb-1" htmlFor="eventStartDateTime">
-                                    Start DateTime:
+                                    Start Date & Time:
                                 </label>
                                 <input
                                     className="px-2 py-1 rounded"
@@ -1954,11 +2146,12 @@ const CalenderContent = ({ department, isAdmin }) => {
                                     id="eventStartDateTime"
                                     value={eventStartDateTime}
                                     onChange={(e) => handleEventDateTimeChange('start', e.target.value)}
+                                    required
                                 />
                             </div>
                             <div className="flex flex-col lg:ml-2">
                                 <label className="block text-white mb-1" htmlFor="eventEndDateTime">
-                                    End DateTime:
+                                    End Date & Time:
                                 </label>
                                 <input
                                     className="px-2 py-1 rounded"
@@ -1966,6 +2159,7 @@ const CalenderContent = ({ department, isAdmin }) => {
                                     id="eventEndDateTime"
                                     value={eventEndDateTime}
                                     onChange={(e) => handleEventDateTimeChange('end', e.target.value)}
+                                    required
                                 />
                             </div>
                             <div className="flex flex-col mt-7 lg:ml-2">
