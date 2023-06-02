@@ -1624,6 +1624,7 @@ const UsersContent = () => {
                     const userList = Object.entries(data).map(([uid, user]) => ({
                         uid,
                         name: user.name,
+                        email: user.email,
                         position: user.position,
                         department: user.department,
                         contact: user.contact,
