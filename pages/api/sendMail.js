@@ -1,4 +1,4 @@
-import nodemailer from 'nodemailer';
+const nodemailer = require('nodemailer');
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   try {
     // Create the transporter using the provided email credentials
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: 'Gmail',
       auth: {
         user: userEmail,
         pass: userPassword,

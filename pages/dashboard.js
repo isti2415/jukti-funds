@@ -32,7 +32,6 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilePdf, faMailBulk } from "@fortawesome/free-solid-svg-icons";
-var nodemailer = require("nodemailer");
 
 const localizer = momentLocalizer(moment);
 
