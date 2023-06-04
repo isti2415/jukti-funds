@@ -6,12 +6,12 @@ export default async function handler(req, res) {
     return;
   }
 
-  const { userEmail, userPassword, defaultersList } = req.body;
+  const { userEmail, userPassword, defaultersList, mailSubject, mailer } = req.body;
 
   try {
     // Create the transporter using the provided email credentials
     const transporter = nodemailer.createTransport({
-      service: 'Gmail',
+      service: 'gmail',
       auth: {
         user: userEmail,
         pass: userPassword,
@@ -20,10 +20,10 @@ export default async function handler(req, res) {
 
     // Send emails to defaulters
     for (const defaulter of defaultersList) {
-      const { name, email, mailSubject, mailBody } = defaulter;
+      const { name, email, mailBody } = defaulter;
 
       const mailOptions = {
-        from: userEmail,
+        from: `${mailer} <${userEmail}>`,
         to: email,
         subject: mailSubject,
         text: mailBody,

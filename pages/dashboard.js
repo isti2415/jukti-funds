@@ -45,6 +45,7 @@ const Dashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false); // Default value set to false
   const [department, setDepartment] = useState("");
   const [position, setPosition] = useState("");
+  const [name, setName] = useState("");
 
   const toggleMenu = () => {
     setIsMenuExpanded((prevIsMenuExpanded) => !prevIsMenuExpanded);
@@ -73,6 +74,9 @@ const Dashboard = () => {
           );
           setPosition(
             Object.values(users).find((user) => user.email === email)?.position
+          );
+          setName(
+            Object.values(users).find((user) => user.email === email)?.name
           );
         }
       });
@@ -141,51 +145,46 @@ const Dashboard = () => {
         </div>
         <div className="flex overflow-x-hidden">
           <div
-            className={`bg-gray-800 fixed top-10 min-h-screen right-0 ${
-              isMenuExpanded ? "w-64" : "w-0"
-            } transition-width duration-300 overflow-y-auto transition-all ease-in-out`}
+            className={`bg-gray-800 fixed top-10 min-h-screen right-0 ${isMenuExpanded ? "w-64" : "w-0"
+              } transition-width duration-300 overflow-y-auto transition-all ease-in-out`}
             style={{ zIndex: 999 }}
           >
             {/* Menu content */}
             {isMenuExpanded && (
               <ul className="mt-8">
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "Payment"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "Payment"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("Payment")}
                 >
                   <span className="text-white">Make Payment</span>
                 </li>
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "PaymentMethod"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "PaymentMethod"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("PaymentMethod")}
                 >
                   <span className="text-white">Payment Methods</span>
                 </li>
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "PaymentHistory"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "PaymentHistory"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("PaymentHistory")}
                 >
                   <span className="text-white">Payment History</span>
                 </li>
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${
-                      selectedMenu === "allpayment"
-                        ? "bg-jukti-orange"
-                        : "hover:bg-gray-800"
-                    }`}
+                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "allpayment"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                      }`}
                     onClick={() => handleMenuSelection("allpayment")}
                   >
                     <span className="text-white">All Payments</span>
@@ -193,11 +192,10 @@ const Dashboard = () => {
                 ) : null}
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${
-                      selectedMenu === "pendingpayment"
-                        ? "bg-jukti-orange"
-                        : "hover:bg-gray-800"
-                    }`}
+                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "pendingpayment"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                      }`}
                     onClick={() => handleMenuSelection("pendingpayment")}
                   >
                     <span className="text-white">Pending Payments</span>
@@ -205,66 +203,60 @@ const Dashboard = () => {
                 ) : null}
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${
-                      selectedMenu === "reports"
-                        ? "bg-jukti-orange"
-                        : "hover:bg-gray-800"
-                    }`}
+                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "reports"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                      }`}
                     onClick={() => handleMenuSelection("reports")}
                   >
                     <span className="text-white">Reports</span>
                   </li>
                 ) : null}
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "calender"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "calender"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("calender")}
                 >
                   <span className="text-white">Event Calender</span>
                 </li>
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${
-                      selectedMenu === "users"
-                        ? "bg-jukti-orange"
-                        : "hover:bg-gray-800"
-                    }`}
+                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "users"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                      }`}
                     onClick={() => handleMenuSelection("users")}
                   >
                     <span className="text-white">Users</span>
                   </li>
                 ) : null}
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "profile"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "profile"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("profile")}
                 >
                   <span className="text-white">Profile</span>
                 </li>
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${
-                      selectedMenu === "settings"
-                        ? "bg-jukti-orange"
-                        : "hover:bg-gray-800"
-                    }`}
+                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "settings"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                      }`}
                     onClick={() => handleMenuSelection("settings")}
                   >
                     <span className="text-white">Settings</span>
                   </li>
                 ) : null}
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "logout"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "logout"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("logout")}
                 >
                   <span className="text-white">Logout</span>
@@ -280,7 +272,7 @@ const Dashboard = () => {
             {selectedMenu === "PaymentHistory" && <PaymentHistoryContent />}
             {selectedMenu === "profile" && <ProfileContent />}
             {selectedMenu === "allpayment" && <AllPaymentContent />}
-            {selectedMenu === "reports" && <ReportsContent />}
+            {selectedMenu === "reports" && (<ReportsContent currentUserName={name} />)}
             {selectedMenu === "calender" && (
               <CalenderContent department={department} isAdmin={isAdmin} />
             )}
@@ -412,9 +404,8 @@ const PaymentContent = ({ handleMenuSelection }) => {
   ]);
 
   const savePaymentData = (paymentData) => {
-    paymentData.emailMonthYearStatus = `${jsCookie.get("userEmail")}_${
-      paymentData.month
-    }_${paymentData.year}_${paymentData.status}`;
+    paymentData.emailMonthYearStatus = `${jsCookie.get("userEmail")}_${paymentData.month
+      }_${paymentData.year}_${paymentData.status}`;
     const paymentsRef = ref(db, "payments");
     push(paymentsRef, {
       ...paymentData,
@@ -1245,11 +1236,10 @@ const AllPaymentContent = () => {
       {payments.length > perPage && (
         <div class="pagination flex justify-center pt-4">
           <button
-            className={`previous rounded-l py-2 px-4 ${
-              currentPage === 0
-                ? "text-gray-400"
-                : "text-gray-200 hover:text-gray-400"
-            }`}
+            className={`previous rounded-l py-2 px-4 ${currentPage === 0
+              ? "text-gray-400"
+              : "text-gray-200 hover:text-gray-400"
+              }`}
             onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 0}
           >
@@ -1273,11 +1263,10 @@ const AllPaymentContent = () => {
               ))}
           </div>
           <button
-            className={`next rounded-r py-2 px-4 ${
-              currentPage === pageCount - 1
-                ? "text-gray-400"
-                : "text-gray-200 hover:text-gray-400"
-            }`}
+            className={`next rounded-r py-2 px-4 ${currentPage === pageCount - 1
+              ? "text-gray-400"
+              : "text-gray-200 hover:text-gray-400"
+              }`}
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={currentPage === pageCount - 1}
           >
@@ -1416,11 +1405,10 @@ const PaymentHistoryContent = () => {
       {pendingPayments.length > perPage && (
         <div className="flex justify-center pt-4">
           <button
-            className={`previous rounded-l py-2 px-4 ${
-              currentPage === 0
-                ? "text-gray-400"
-                : "text-gray-200 hover:text-gray-400"
-            }`}
+            className={`previous rounded-l py-2 px-4 ${currentPage === 0
+              ? "text-gray-400"
+              : "text-gray-200 hover:text-gray-400"
+              }`}
             onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 0}
           >
@@ -1432,11 +1420,10 @@ const PaymentHistoryContent = () => {
               .map((_, page) => (
                 <button
                   key={page}
-                  className={`${
-                    page === currentPage
-                      ? "bg-blue-500 text-white"
-                      : "text-gray-200 hover:text-gray-400"
-                  } py-2 px-4 rounded`}
+                  className={`${page === currentPage
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-200 hover:text-gray-400"
+                    } py-2 px-4 rounded`}
                   onClick={() => setCurrentPage(page)}
                 >
                   {page + 1}
@@ -1444,11 +1431,10 @@ const PaymentHistoryContent = () => {
               ))}
           </div>
           <button
-            className={`next rounded-r py-2 px-4 ${
-              currentPage === Math.ceil(pendingPayments.length / perPage) - 1
-                ? "text-gray-400"
-                : "text-gray-200 hover:text-gray-400"
-            }`}
+            className={`next rounded-r py-2 px-4 ${currentPage === Math.ceil(pendingPayments.length / perPage) - 1
+              ? "text-gray-400"
+              : "text-gray-200 hover:text-gray-400"
+              }`}
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={
               currentPage === Math.ceil(pendingPayments.length / perPage) - 1
@@ -1510,8 +1496,6 @@ const ProfileContent = () => {
       ...prevUser,
       [name]: value,
     }));
-    // Perform update logic here
-    alert("Updated user:", user);
 
     // Update the user object in the database
     updateUser(user);
@@ -2007,7 +1991,7 @@ const UsersContent = () => {
   );
 };
 
-const ReportsContent = () => {
+const ReportsContent = ({currentUserName}) => {
   const currentDate = new Date();
   const [monthlySummary, setMonthlySummary] = useState({});
   const [selectedMonth, setSelectedMonth] = useState("");
@@ -2222,6 +2206,8 @@ const ReportsContent = () => {
                   id="email"
                   name="email"
                   className="border border-gray-300 rounded-md px-3 py-2 w-full"
+                  value={email}
+                  onChange={handleEmailChange}
                 />
               </p>
               <p className="text-md mb-1">
@@ -2231,6 +2217,8 @@ const ReportsContent = () => {
                   id="password"
                   name="password"
                   className="border border-gray-300 rounded-md px-3 py-2 w-full"
+                  value={password}
+                  onChange={handlePasswordChange}
                 />
               </p>
               <button
@@ -2252,8 +2240,9 @@ const ReportsContent = () => {
     const defaultersList =
       defaulters[`${selectedDefaulterMonth}-${selectedDefaulterYear}`];
 
-    const mailBody = `Dear {name},\n\nThis is to inform you that you have not paid your dues for the month of ${selectedDefaulterMonth}, ${selectedDefaulterYear}.\n\nPlease pay your dues as soon as possible.\n\nRegards,\nIstiaq Ahmed,\nTreasurer, JUKTI - Official Club of CSE`;
+    const mailBody = `Dear {name},\n\nThis is to inform you that you have not paid your dues for the month of ${selectedDefaulterMonth}, ${selectedDefaulterYear}.\n\nPlease pay your dues as soon as possible.\n\nRegards,\n${currentUserName},\nTreasurer, JUKTI - Official Club of CSE`;
     const mailSubject = `Payment Reminder for JUKTI Funds`;
+    const mailer = `Treasurer - JUKTI - Official Club of CSE`;
 
     const requestBody = {
       userEmail: email,
@@ -2261,8 +2250,9 @@ const ReportsContent = () => {
       defaultersList: defaultersList.map((defaulter) => ({
         ...defaulter,
         mailBody: mailBody.replace("{name}", defaulter.name),
-        mailSubject,
       })),
+      mailSubject,
+      mailer,
     };
 
     try {
@@ -2285,6 +2275,7 @@ const ReportsContent = () => {
       alert("Error sending emails. Please try again later.");
     }
   };
+
 
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
@@ -2858,8 +2849,8 @@ const CalenderContent = ({ department, isAdmin }) => {
                   value={
                     isEditing
                       ? moment(editedEventStartDateTime).format(
-                          "YYYY-MM-DDTHH:mm"
-                        )
+                        "YYYY-MM-DDTHH:mm"
+                      )
                       : moment(selectedEvent.start).format("YYYY-MM-DDTHH:mm")
                   }
                   onChange={(e) =>
@@ -2882,8 +2873,8 @@ const CalenderContent = ({ department, isAdmin }) => {
                   value={
                     isEditing
                       ? moment(editedEventEndDateTime).format(
-                          "YYYY-MM-DDTHH:mm"
-                        )
+                        "YYYY-MM-DDTHH:mm"
+                      )
                       : moment(selectedEvent.end).format("YYYY-MM-DDTHH:mm")
                   }
                   onChange={(e) =>
