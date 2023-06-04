@@ -20,7 +20,7 @@ const Layout = ({ children }) => {
           </Link>
         </header>
 
-        <main className="container mx-auto">
+        <main className="container mx-auto w-full">
           {children}
         </main>
 
