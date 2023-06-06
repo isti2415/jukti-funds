@@ -2007,13 +2007,15 @@ const UsersContent = ({ isAdmin }) => {
         }
       </Disclosure.Button>
         <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white">
+        <div className="overflow-x-auto bg-gray-800 p-2 rounded-xl">
+          <div className="w-full">
           <table className="w-full">
             <thead>
               <tr>
                 <th className="text-gray-300 text-left py-2 px-4 border-b">Name</th>
-                <th className="text-gray-300 text-left py-2 px-4 border-b">Email</th>
                 <th className="text-gray-300 text-left py-2 px-4 border-b">Position</th>
                 <th className="text-gray-300 text-left py-2 px-4 border-b">Department</th>
+                <th className="text-gray-300 text-left py-2 px-4 border-b">Email</th>
                 <th className="text-gray-300 text-left py-2 px-4 border-b">Contact</th>
                 {isAdmin && <th className="text-gray-300 text-left py-2 px-4 border-b">Admin</th>}
               </tr>
@@ -2022,9 +2024,9 @@ const UsersContent = ({ isAdmin }) => {
               {departmentUsers.map((user) => (
                 <tr key={user.uid}>
                   <td className="text-white py-2 px-4 border-b">{user.name}</td>
-                  <td className="text-white py-2 px-4 border-b">{user.email}</td>
                   <td className="text-white py-2 px-4 border-b">{user.position}</td>
                   <td className="text-white py-2 px-4 border-b">{user.department}</td>
+                  <td className="text-white py-2 px-4 border-b">{user.email}</td>
                   <td className="text-white py-2 px-4 border-b">{user.contact}</td>
                   {isAdmin && (
                     <td className="text-white text-center py-2 px-4 border-b">
@@ -2044,6 +2046,8 @@ const UsersContent = ({ isAdmin }) => {
               ))}
             </tbody>
           </table>
+          </div>
+        </div>
         </Disclosure.Panel>
         </>
       )}
