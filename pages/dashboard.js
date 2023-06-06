@@ -32,6 +32,9 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilePdf, faMailBulk } from "@fortawesome/free-solid-svg-icons";
+import { Table } from "@nextui-org/react";
+import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/solid";
+import { el } from "date-fns/locale";
 
 const localizer = momentLocalizer(moment);
 
@@ -219,18 +222,16 @@ const Dashboard = () => {
                 >
                   <span className="text-white">Event Calender</span>
                 </li>
-                {isAdmin ? (
-                  <li
-                    className={`py-2 pl-4 cursor-pointer ${
-                      selectedMenu === "users"
-                        ? "bg-jukti-orange"
-                        : "hover:bg-gray-800"
-                    }`}
-                    onClick={() => handleMenuSelection("users")}
-                  >
-                    <span className="text-white">Users</span>
-                  </li>
-                ) : null}
+                <li
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "users"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
+                  onClick={() => handleMenuSelection("users")}
+                >
+                  <span className="text-white">Board Members</span>
+                </li>
                 <li
                   className={`py-2 pl-4 cursor-pointer ${
                     selectedMenu === "profile"
@@ -280,7 +281,7 @@ const Dashboard = () => {
               <CalenderContent department={department} isAdmin={isAdmin} />
             )}
             {selectedMenu === "settings" && <SettingsContent />}
-            {selectedMenu === "users" && <UsersContent />}
+            {selectedMenu === "users" && <UsersContent isAdmin={isAdmin} />}
             {selectedMenu === "pendingpayment" && <PendingPaymentContent />}
           </div>
         </div>
@@ -1900,7 +1901,7 @@ const SettingsContent = () => {
   );
 };
 
-const UsersContent = () => {
+const UsersContent = ({ isAdmin }) => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
@@ -1943,57 +1944,112 @@ const UsersContent = () => {
 
   // Group users by department
   const groupedUsers = {};
+
   users.forEach((user) => {
     const department = user.department;
+    
     if (groupedUsers.hasOwnProperty(department)) {
       groupedUsers[department].push(user);
     } else {
       groupedUsers[department] = [user];
     }
   });
+  
+  // Sort groups by priority or position
+  Object.keys(groupedUsers).forEach((department) => {
+    if (department === "Core Body" || department === "Advisory Board") {
+      groupedUsers[department].forEach((user) => {
+        if (department === "Core Body") {
+          if (user.position === "President") {
+            user.priority = 1;
+          } else if (user.position === "Vice President") {
+            user.priority = 2;
+          } else if (user.position === "General Secretary") {
+            user.priority = 3;
+          } else if (user.position === "Joint Secretary") {
+            user.priority = 4;
+          } else if (user.position === "Treasurer") {
+            user.priority = 5;
+          }
+        } else if (department === "Advisory Board") {
+          if (user.position === "Student Advisor") {
+            user.priority = 1;
+          } else if (user.position === "Strategic Advisor") {
+            user.priority = 2;
+          } else if (user.position === "Operations Advisor") {
+            user.priority = 3;
+          } else if (user.position === "Subject Matter Expert") {
+            user.priority = 4;
+          }
+        }
+      });
+  
+      groupedUsers[department].sort((a, b) => a.priority - b.priority);
+    } else {
+      groupedUsers[department].sort((a, b) => a.position.localeCompare(b.position));
+    }
+  });
+  
+    
 
   return (
-    <div>
-      <h2 className="text-2xl text-white">Users</h2>
+    <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
+      <h2 className="text-2xl text-white">Board Members</h2>
       {Object.entries(groupedUsers).map(([department, departmentUsers]) => (
-        <div key={department} className="mt-6">
-          <h3 className="text-xl font-semibold text-white">{department}</h3>
-          <div className="flex flex-wrap justify-start">
-            {departmentUsers.map((user) => (
-              <div
-                key={user.uid}
-                className="flex flex-col sm:col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4 mx-2 pt-4"
-              >
-                <div className="bg-gray-800 rounded-lg p-6 text-white">
-                  <h3 className="text-xl font-semibold mb-2">{user.name}</h3>
-                  <p className="text-md mb-1">
-                    <strong>Email:</strong> {user.email}
-                  </p>
-                  <p className="text-md mb-1">
-                    <strong>Position:</strong> {user.position}
-                  </p>
-                  <p className="text-md mb-1">
-                    <strong>Department:</strong> {user.department}
-                  </p>
-                  <p className="text-md mb-1">
-                    <strong>Contact:</strong> {user.contact}
-                  </p>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={user.isAdmin}
-                      onChange={(e) =>
-                        handleAdminCheckboxChange(user.uid, e.target.checked)
-                      }
-                    />
-                    <span className="text-md">Admin</span>
-                  </label>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      ))}
+    <div key={department} className="mt-8">
+      <Disclosure>
+      {({ open }) => (
+                      <>
+      <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+        <span>{department}</span>
+        {open?(<ChevronUpIcon className="w-5 h-5 text-white" />)
+        :(<ChevronDownIcon className="w-5 h-5 text-white" />)
+        }
+      </Disclosure.Button>
+        <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white">
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-gray-300 text-left py-2 px-4 border-b">Name</th>
+                <th className="text-gray-300 text-left py-2 px-4 border-b">Email</th>
+                <th className="text-gray-300 text-left py-2 px-4 border-b">Position</th>
+                <th className="text-gray-300 text-left py-2 px-4 border-b">Department</th>
+                <th className="text-gray-300 text-left py-2 px-4 border-b">Contact</th>
+                {isAdmin && <th className="text-gray-300 text-left py-2 px-4 border-b">Admin</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {departmentUsers.map((user) => (
+                <tr key={user.uid}>
+                  <td className="text-white py-2 px-4 border-b">{user.name}</td>
+                  <td className="text-white py-2 px-4 border-b">{user.email}</td>
+                  <td className="text-white py-2 px-4 border-b">{user.position}</td>
+                  <td className="text-white py-2 px-4 border-b">{user.department}</td>
+                  <td className="text-white py-2 px-4 border-b">{user.contact}</td>
+                  {isAdmin && (
+                    <td className="text-white text-center py-2 px-4 border-b">
+                        <input
+                          type="checkbox"
+                          checked={user.isAdmin}
+                          onChange={(e) =>
+                            handleAdminCheckboxChange(
+                              user.uid,
+                              e.target.checked
+                            )
+                          }
+                        />
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Disclosure.Panel>
+        </>
+      )}
+</Disclosure>
+    </div>
+  ))}
     </div>
   );
 };
