@@ -3023,7 +3023,7 @@ const CalenderContent = ({ department, isAdmin }) => {
             endAccessor="end"
             defaultView={Views.MONTH}
             views={[Views.MONTH, Views.WEEK, Views.DAY]}
-            className="react-big-calendar rounded-lg p-6 w-full bg-white"
+            className="react-big-calendar rounded-lg p-6 w-full bg-gray-100"
             eventPropGetter={getEventColor}
           />
         </div>
