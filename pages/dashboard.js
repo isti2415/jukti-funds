@@ -32,9 +32,7 @@ import jsPDF from "jspdf";
 import "jspdf-autotable";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilePdf, faMailBulk } from "@fortawesome/free-solid-svg-icons";
-import { Table } from "@nextui-org/react";
 import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/solid";
-import { el } from "date-fns/locale";
 
 const localizer = momentLocalizer(moment);
 
@@ -1154,12 +1152,12 @@ const AllPaymentContent = () => {
           >
             Reset Filter
           </button>
-          <button
-            className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none"
+          <button className="flex items-center bg-transparent text-jukti-orange"
             onClick={handleDownloadPDF}
           >
-            <FontAwesomeIcon icon={faFilePdf} className="w-8 h-8" />
-          </button>
+              <FontAwesomeIcon icon={faFilePdf} className="m-2 w-8 h-8" />
+              <span>Download PDF</span>
+            </button>
         </div>
       </div>
       {paginatedPayments.length > 0 ? (
@@ -2006,8 +2004,8 @@ const UsersContent = ({ isAdmin }) => {
         :(<ChevronDownIcon className="w-5 h-5 text-white" />)
         }
       </Disclosure.Button>
-        <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white">
-        <div className="overflow-x-auto bg-gray-800 p-2 rounded-xl">
+        <Disclosure.Panel className="pt-4 pb-2 text-sm text-white">
+        <div className="overflow-x-auto bg-gray-800 rounded-xl">
           <div className="w-full">
           <table className="w-full">
             <thead>
