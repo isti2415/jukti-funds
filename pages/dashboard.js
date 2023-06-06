@@ -145,46 +145,41 @@ const Dashboard = () => {
         </div>
         <div className="flex overflow-x-hidden">
           <div
-            className={`bg-gray-800 fixed top-10 min-h-screen right-0 ${isMenuExpanded ? "w-64" : "w-0"
-              } transition-width duration-300 overflow-y-auto transition-all ease-in-out`}
+            className={`bg-gray-800 fixed top-10 min-h-screen right-0 ${
+              isMenuExpanded ? "w-64" : "w-0"
+            } transition-width duration-300 overflow-y-auto transition-all ease-in-out`}
             style={{ zIndex: 999 }}
           >
             {/* Menu content */}
             {isMenuExpanded && (
               <ul className="mt-8">
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "Payment"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "Payment"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("Payment")}
                 >
                   <span className="text-white">Make Payment</span>
                 </li>
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "PaymentMethod"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
-                  onClick={() => handleMenuSelection("PaymentMethod")}
-                >
-                  <span className="text-white">Payment Methods</span>
-                </li>
-                <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "PaymentHistory"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "PaymentHistory"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("PaymentHistory")}
                 >
                   <span className="text-white">Payment History</span>
                 </li>
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "allpayment"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                      }`}
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "allpayment"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
                     onClick={() => handleMenuSelection("allpayment")}
                   >
                     <span className="text-white">All Payments</span>
@@ -192,10 +187,11 @@ const Dashboard = () => {
                 ) : null}
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "pendingpayment"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                      }`}
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "pendingpayment"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
                     onClick={() => handleMenuSelection("pendingpayment")}
                   >
                     <span className="text-white">Pending Payments</span>
@@ -203,60 +199,66 @@ const Dashboard = () => {
                 ) : null}
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "reports"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                      }`}
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "reports"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
                     onClick={() => handleMenuSelection("reports")}
                   >
                     <span className="text-white">Reports</span>
                   </li>
                 ) : null}
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "calender"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "calender"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("calender")}
                 >
                   <span className="text-white">Event Calender</span>
                 </li>
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "users"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                      }`}
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "users"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
                     onClick={() => handleMenuSelection("users")}
                   >
                     <span className="text-white">Users</span>
                   </li>
                 ) : null}
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "profile"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "profile"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("profile")}
                 >
                   <span className="text-white">Profile</span>
                 </li>
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "settings"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                      }`}
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "settings"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
                     onClick={() => handleMenuSelection("settings")}
                   >
                     <span className="text-white">Settings</span>
                   </li>
                 ) : null}
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "logout"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "logout"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("logout")}
                 >
                   <span className="text-white">Logout</span>
@@ -268,11 +270,12 @@ const Dashboard = () => {
             {selectedMenu === "Payment" && (
               <PaymentContent handleMenuSelection={handleMenuSelection} />
             )}
-            {selectedMenu === "PaymentMethod" && <PaymentMethodContent />}
             {selectedMenu === "PaymentHistory" && <PaymentHistoryContent />}
             {selectedMenu === "profile" && <ProfileContent />}
             {selectedMenu === "allpayment" && <AllPaymentContent />}
-            {selectedMenu === "reports" && (<ReportsContent currentUserName={name} />)}
+            {selectedMenu === "reports" && (
+              <ReportsContent currentUserName={name} />
+            )}
             {selectedMenu === "calender" && (
               <CalenderContent department={department} isAdmin={isAdmin} />
             )}
@@ -286,7 +289,7 @@ const Dashboard = () => {
   }
 };
 
-const PaymentContent = ({ handleMenuSelection }) => {
+const PaymentContent = () => {
   const auth = getAuth(app);
   const db = getDatabase(app);
 
@@ -404,13 +407,67 @@ const PaymentContent = ({ handleMenuSelection }) => {
   ]);
 
   const savePaymentData = (paymentData) => {
-    paymentData.emailMonthYearStatus = `${jsCookie.get("userEmail")}_${paymentData.month
-      }_${paymentData.year}_${paymentData.status}`;
+    paymentData.emailMonthYearStatus = `${jsCookie.get("userEmail")}_${
+      paymentData.month
+    }_${paymentData.year}_${paymentData.status}`;
     const paymentsRef = ref(db, "payments");
     push(paymentsRef, {
       ...paymentData,
       email: jsCookie.get("userEmail"),
     });
+  };
+
+  const [showModal, setShowModal] = useState(false);
+
+  const MyModal = () => {
+    return (
+      <div
+        className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75"
+        style={{ zIndex: 1000 }}
+      >
+        <div className="max-w-6xl max-h-screen grid w-screen grid-cols-1 bg-gray-800 rounded-lg p-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl text-white px-4 py-2 rounded-t-lg">
+              Payment Methods
+            </h2>
+            <button
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline inline-block ml-4"
+              onClick={() => setShowModal(false)}
+            >
+              Close
+            </button>
+          </div>
+          <div className="max-h-[calc(100vh-128px)] overflow-y-auto">
+            {paymentMethods.length > 0 ? (
+              paymentMethods.map((paymentMethod) => (
+                <div key={paymentMethod.id} className="">
+                  <Disclosure className="">
+                    {({ open }) => (
+                      <>
+                        <Disclosure.Button className="flex flex-auto justify-center bg-orange-500 hover:bg-orange-600 w-full text-white font-bold py-4 my-4 px-4 rounded focus:outline-none focus:shadow-outline">
+                          <h3 className="text-xl">{paymentMethod.name}</h3>
+                        </Disclosure.Button>
+                        <Disclosure.Panel className="px-4 pt-4 pb-2 text-white text-lg">
+                          <div
+                            className="formatted-text"
+                            style={{ whiteSpace: "pre-wrap" }}
+                            dangerouslySetInnerHTML={{
+                              __html: paymentMethod.description,
+                            }}
+                          ></div>
+                        </Disclosure.Panel>
+                      </>
+                    )}
+                  </Disclosure>
+                </div>
+              ))
+            ) : (
+              <p className="text-white">No payment methods found.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -419,12 +476,11 @@ const PaymentContent = ({ handleMenuSelection }) => {
         <h2 className="text-2xl text-white">Make Payment</h2>
         <button
           class="bg-jukti-orange hover:bg-jukti-orange-dark text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline inline-block ml-4"
-          onClick={() =>
-            handleMenuSelection("PaymentMethod") && <PaymentMethodContent />
-          }
+          onClick={() => setShowModal(true)}
         >
           Payment Methods
         </button>
+        {showModal && <MyModal />}
       </div>
       <form
         className="gap-4 py-16 justify-start rounded-lg"
@@ -580,60 +636,6 @@ const PaymentContent = ({ handleMenuSelection }) => {
           </button>
         </div>
       </form>
-    </div>
-  );
-};
-
-const PaymentMethodContent = () => {
-  const [paymentMethods, setPaymentMethods] = useState([]);
-
-  useEffect(() => {
-    const db = getDatabase(app);
-    const paymentMethodsRef = ref(db, "paymentMethods");
-    onValue(paymentMethodsRef, (snapshot) => {
-      const paymentMethodsData = snapshot.val();
-      const paymentMethodsList = [];
-      snapshot.forEach((childSnapshot) => {
-        const paymentMethod = {
-          id: childSnapshot.key,
-          name: childSnapshot.val().name,
-          description: childSnapshot.val().description.replace(/\n/g, "<br>"),
-        };
-        paymentMethodsList.push(paymentMethod);
-      });
-      setPaymentMethods(paymentMethodsList);
-    });
-  }, []);
-
-  return (
-    <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
-      <h2 className="text-2xl text-white mb-6">Payment Methods</h2>
-      {paymentMethods.length > 0 ? (
-        paymentMethods.map((paymentMethod) => (
-          <div key={paymentMethod.id} className="">
-            <Disclosure className="">
-              {({ open }) => (
-                <>
-                  <Disclosure.Button className="flex flex-auto justify-center bg-jukti-orange hover:bg-jukti-orange-dark w-full text-white font-bold py-4 my-4 px-4 rounded focus:outline-none focus:shadow-outline">
-                    <h3 className="text-xl">{paymentMethod.name}</h3>
-                  </Disclosure.Button>
-                  <Disclosure.Panel className="px-4 pt-4 pb-2 text-white text-lg">
-                    <div
-                      className="formatted-text"
-                      style={{ whiteSpace: "pre-wrap" }}
-                      dangerouslySetInnerHTML={{
-                        __html: paymentMethod.description,
-                      }}
-                    ></div>
-                  </Disclosure.Panel>
-                </>
-              )}
-            </Disclosure>
-          </div>
-        ))
-      ) : (
-        <p className="text-white">No payment methods found.</p>
-      )}
     </div>
   );
 };
@@ -1236,10 +1238,11 @@ const AllPaymentContent = () => {
       {payments.length > perPage && (
         <div class="pagination flex justify-center pt-4">
           <button
-            className={`previous rounded-l py-2 px-4 ${currentPage === 0
-              ? "text-gray-400"
-              : "text-gray-200 hover:text-gray-400"
-              }`}
+            className={`previous rounded-l py-2 px-4 ${
+              currentPage === 0
+                ? "text-gray-400"
+                : "text-gray-200 hover:text-gray-400"
+            }`}
             onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 0}
           >
@@ -1263,10 +1266,11 @@ const AllPaymentContent = () => {
               ))}
           </div>
           <button
-            className={`next rounded-r py-2 px-4 ${currentPage === pageCount - 1
-              ? "text-gray-400"
-              : "text-gray-200 hover:text-gray-400"
-              }`}
+            className={`next rounded-r py-2 px-4 ${
+              currentPage === pageCount - 1
+                ? "text-gray-400"
+                : "text-gray-200 hover:text-gray-400"
+            }`}
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={currentPage === pageCount - 1}
           >
@@ -1405,10 +1409,11 @@ const PaymentHistoryContent = () => {
       {pendingPayments.length > perPage && (
         <div className="flex justify-center pt-4">
           <button
-            className={`previous rounded-l py-2 px-4 ${currentPage === 0
-              ? "text-gray-400"
-              : "text-gray-200 hover:text-gray-400"
-              }`}
+            className={`previous rounded-l py-2 px-4 ${
+              currentPage === 0
+                ? "text-gray-400"
+                : "text-gray-200 hover:text-gray-400"
+            }`}
             onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 0}
           >
@@ -1420,10 +1425,11 @@ const PaymentHistoryContent = () => {
               .map((_, page) => (
                 <button
                   key={page}
-                  className={`${page === currentPage
-                    ? "bg-blue-500 text-white"
-                    : "text-gray-200 hover:text-gray-400"
-                    } py-2 px-4 rounded`}
+                  className={`${
+                    page === currentPage
+                      ? "bg-blue-500 text-white"
+                      : "text-gray-200 hover:text-gray-400"
+                  } py-2 px-4 rounded`}
                   onClick={() => setCurrentPage(page)}
                 >
                   {page + 1}
@@ -1431,10 +1437,11 @@ const PaymentHistoryContent = () => {
               ))}
           </div>
           <button
-            className={`next rounded-r py-2 px-4 ${currentPage === Math.ceil(pendingPayments.length / perPage) - 1
-              ? "text-gray-400"
-              : "text-gray-200 hover:text-gray-400"
-              }`}
+            className={`next rounded-r py-2 px-4 ${
+              currentPage === Math.ceil(pendingPayments.length / perPage) - 1
+                ? "text-gray-400"
+                : "text-gray-200 hover:text-gray-400"
+            }`}
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={
               currentPage === Math.ceil(pendingPayments.length / perPage) - 1
@@ -1991,7 +1998,7 @@ const UsersContent = () => {
   );
 };
 
-const ReportsContent = ({currentUserName}) => {
+const ReportsContent = ({ currentUserName }) => {
   const currentDate = new Date();
   const [monthlySummary, setMonthlySummary] = useState({});
   const [selectedMonth, setSelectedMonth] = useState("");
@@ -2275,7 +2282,6 @@ const ReportsContent = ({currentUserName}) => {
       alert("Error sending emails. Please try again later.");
     }
   };
-
 
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
@@ -2849,8 +2855,8 @@ const CalenderContent = ({ department, isAdmin }) => {
                   value={
                     isEditing
                       ? moment(editedEventStartDateTime).format(
-                        "YYYY-MM-DDTHH:mm"
-                      )
+                          "YYYY-MM-DDTHH:mm"
+                        )
                       : moment(selectedEvent.start).format("YYYY-MM-DDTHH:mm")
                   }
                   onChange={(e) =>
@@ -2873,8 +2879,8 @@ const CalenderContent = ({ department, isAdmin }) => {
                   value={
                     isEditing
                       ? moment(editedEventEndDateTime).format(
-                        "YYYY-MM-DDTHH:mm"
-                      )
+                          "YYYY-MM-DDTHH:mm"
+                        )
                       : moment(selectedEvent.end).format("YYYY-MM-DDTHH:mm")
                   }
                   onChange={(e) =>
