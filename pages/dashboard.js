@@ -146,41 +146,37 @@ const Dashboard = () => {
         </div>
         <div className="flex overflow-x-hidden">
           <div
-            className={`bg-gray-800 fixed top-10 min-h-screen right-0 ${
-              isMenuExpanded ? "w-64" : "w-0"
-            } transition-width duration-300 overflow-y-auto transition-all ease-in-out`}
+            className={`bg-gray-800 fixed top-10 min-h-screen right-0 ${isMenuExpanded ? "w-64" : "w-0"
+              } transition-width duration-300 overflow-y-auto transition-all ease-in-out`}
             style={{ zIndex: 999 }}
           >
             {/* Menu content */}
             {isMenuExpanded && (
               <ul className="mt-8">
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "Payment"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "Payment"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("Payment")}
                 >
                   <span className="text-white">Make Payment</span>
                 </li>
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "PaymentHistory"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "PaymentHistory"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("PaymentHistory")}
                 >
                   <span className="text-white">Payment History</span>
                 </li>
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${
-                      selectedMenu === "allpayment"
-                        ? "bg-jukti-orange"
-                        : "hover:bg-gray-800"
-                    }`}
+                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "allpayment"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                      }`}
                     onClick={() => handleMenuSelection("allpayment")}
                   >
                     <span className="text-white">All Payments</span>
@@ -188,11 +184,10 @@ const Dashboard = () => {
                 ) : null}
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${
-                      selectedMenu === "pendingpayment"
-                        ? "bg-jukti-orange"
-                        : "hover:bg-gray-800"
-                    }`}
+                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "pendingpayment"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                      }`}
                     onClick={() => handleMenuSelection("pendingpayment")}
                   >
                     <span className="text-white">Pending Payments</span>
@@ -200,64 +195,58 @@ const Dashboard = () => {
                 ) : null}
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${
-                      selectedMenu === "reports"
-                        ? "bg-jukti-orange"
-                        : "hover:bg-gray-800"
-                    }`}
+                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "reports"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                      }`}
                     onClick={() => handleMenuSelection("reports")}
                   >
                     <span className="text-white">Reports</span>
                   </li>
                 ) : null}
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "calender"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "calender"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("calender")}
                 >
                   <span className="text-white">Event Calender</span>
                 </li>
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "users"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "users"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("users")}
                 >
                   <span className="text-white">Board Members</span>
                 </li>
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "profile"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "profile"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("profile")}
                 >
                   <span className="text-white">Profile</span>
                 </li>
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${
-                      selectedMenu === "settings"
-                        ? "bg-jukti-orange"
-                        : "hover:bg-gray-800"
-                    }`}
+                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "settings"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                      }`}
                     onClick={() => handleMenuSelection("settings")}
                   >
                     <span className="text-white">Settings</span>
                   </li>
                 ) : null}
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${
-                    selectedMenu === "logout"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                  }`}
+                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "logout"
+                    ? "bg-jukti-orange"
+                    : "hover:bg-gray-800"
+                    }`}
                   onClick={() => handleMenuSelection("logout")}
                 >
                   <span className="text-white">Logout</span>
@@ -406,9 +395,8 @@ const PaymentContent = () => {
   ]);
 
   const savePaymentData = (paymentData) => {
-    paymentData.emailMonthYearStatus = `${jsCookie.get("userEmail")}_${
-      paymentData.month
-    }_${paymentData.year}_${paymentData.status}`;
+    paymentData.emailMonthYearStatus = `${jsCookie.get("userEmail")}_${paymentData.month
+      }_${paymentData.year}_${paymentData.status}`;
     const paymentsRef = ref(db, "payments");
     push(paymentsRef, {
       ...paymentData,
@@ -831,13 +819,18 @@ const AllPaymentContent = () => {
       const departmentsRef = ref(db, "departments");
 
       onValue(departmentsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const departments = Object.entries(data).map(([id, name]) => ({
-            id,
-            name,
-          }));
-          setDepartments(departments);
+        if (snapshot.exists()) {
+          const departmentsData = snapshot.val();
+          const allDepartments = Object.entries(departmentsData).map(
+            ([id, department]) => ({
+              id,
+              name,
+              ...department,
+            })
+          );
+          setDepartments(allDepartments);
+        } else {
+          setDepartments([]);
         }
       });
     };
@@ -1075,7 +1068,7 @@ const AllPaymentContent = () => {
               <option value="May">May</option>
               <option value="June">June</option>
               <option value="July">July</option>
-              <option value="August">Augest</option>
+              <option value="August">August</option>
               <option value="September">September</option>
               <option value="October">Octobor</option>
               <option value="November">November</option>
@@ -1115,11 +1108,7 @@ const AllPaymentContent = () => {
             >
               <option value="">All</option>
               {departments.map((department) => (
-                <option
-                  key={department.id}
-                  name={department.name}
-                  value={department.name}
-                >
+                <option key={department.id} value={department.name}>
                   {department.name}
                 </option>
               ))}
@@ -1155,9 +1144,9 @@ const AllPaymentContent = () => {
           <button className="flex items-center bg-transparent text-jukti-orange"
             onClick={handleDownloadPDF}
           >
-              <FontAwesomeIcon icon={faFilePdf} className="m-2 w-8 h-8" />
-              <span>Download PDF</span>
-            </button>
+            <FontAwesomeIcon icon={faFilePdf} className="m-2 w-8 h-8" />
+            <span>Download PDF</span>
+          </button>
         </div>
       </div>
       {paginatedPayments.length > 0 ? (
@@ -1237,11 +1226,10 @@ const AllPaymentContent = () => {
       {payments.length > perPage && (
         <div class="pagination flex justify-center pt-4">
           <button
-            className={`previous rounded-l py-2 px-4 ${
-              currentPage === 0
-                ? "text-gray-400"
-                : "text-gray-200 hover:text-gray-400"
-            }`}
+            className={`previous rounded-l py-2 px-4 ${currentPage === 0
+              ? "text-gray-400"
+              : "text-gray-200 hover:text-gray-400"
+              }`}
             onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 0}
           >
@@ -1265,11 +1253,10 @@ const AllPaymentContent = () => {
               ))}
           </div>
           <button
-            className={`next rounded-r py-2 px-4 ${
-              currentPage === pageCount - 1
-                ? "text-gray-400"
-                : "text-gray-200 hover:text-gray-400"
-            }`}
+            className={`next rounded-r py-2 px-4 ${currentPage === pageCount - 1
+              ? "text-gray-400"
+              : "text-gray-200 hover:text-gray-400"
+              }`}
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={currentPage === pageCount - 1}
           >
@@ -1408,11 +1395,10 @@ const PaymentHistoryContent = () => {
       {pendingPayments.length > perPage && (
         <div className="flex justify-center pt-4">
           <button
-            className={`previous rounded-l py-2 px-4 ${
-              currentPage === 0
-                ? "text-gray-400"
-                : "text-gray-200 hover:text-gray-400"
-            }`}
+            className={`previous rounded-l py-2 px-4 ${currentPage === 0
+              ? "text-gray-400"
+              : "text-gray-200 hover:text-gray-400"
+              }`}
             onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 0}
           >
@@ -1424,11 +1410,10 @@ const PaymentHistoryContent = () => {
               .map((_, page) => (
                 <button
                   key={page}
-                  className={`${
-                    page === currentPage
-                      ? "bg-blue-500 text-white"
-                      : "text-gray-200 hover:text-gray-400"
-                  } py-2 px-4 rounded`}
+                  className={`${page === currentPage
+                    ? "bg-blue-500 text-white"
+                    : "text-gray-200 hover:text-gray-400"
+                    } py-2 px-4 rounded`}
                   onClick={() => setCurrentPage(page)}
                 >
                   {page + 1}
@@ -1436,11 +1421,10 @@ const PaymentHistoryContent = () => {
               ))}
           </div>
           <button
-            className={`next rounded-r py-2 px-4 ${
-              currentPage === Math.ceil(pendingPayments.length / perPage) - 1
-                ? "text-gray-400"
-                : "text-gray-200 hover:text-gray-400"
-            }`}
+            className={`next rounded-r py-2 px-4 ${currentPage === Math.ceil(pendingPayments.length / perPage) - 1
+              ? "text-gray-400"
+              : "text-gray-200 hover:text-gray-400"
+              }`}
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={
               currentPage === Math.ceil(pendingPayments.length / perPage) - 1
@@ -1663,60 +1647,58 @@ const ProfileContent = () => {
 
 const SettingsContent = () => {
   const [departments, setDepartments] = useState([]);
-  const [positions, setPositions] = useState([]);
-  const [paymentMethods, setPaymentMethods] = useState([]);
   const [newDepartment, setNewDepartment] = useState("");
   const [newPosition, setNewPosition] = useState("");
+  const [newPositionHierarchy, setNewPositionHierarchy] = useState(1);
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const [newPaymentMethod, setNewPaymentMethod] = useState("");
-  const [newPaymentMethodDescription, setNewPaymentMethodDescription] =
-    useState("");
+  const [newPaymentMethodDescription, setNewPaymentMethodDescription] = useState("");
 
   useEffect(() => {
     const db = getDatabase(app);
     const departmentsRef = ref(db, "departments");
-    const positionsRef = ref(db, "positions");
     const paymentMethodsRef = ref(db, "paymentMethods");
 
-    // Fetch departments from the database
     onValue(departmentsRef, (snapshot) => {
       const departmentsData = snapshot.val();
       const departmentsList = [];
+
       snapshot.forEach((childSnapshot) => {
         const department = {
           id: childSnapshot.key,
-          name: childSnapshot.val(),
+          name: childSnapshot.val().name,
+          positions: [],
         };
+
+        const positionsSnapshot = childSnapshot.child("positions");
+        positionsSnapshot.forEach((positionSnapshot) => {
+          const position = {
+            id: positionSnapshot.key,
+            name: positionSnapshot.val().name,
+            hierarchy: positionSnapshot.val().hierarchy,
+          };
+          department.positions.push(position);
+        });
+
         departmentsList.push(department);
       });
+
       setDepartments(departmentsList);
     });
 
-    // Fetch positions from the database
-    onValue(positionsRef, (snapshot) => {
-      const positionsData = snapshot.val();
-      const positionsList = [];
-      snapshot.forEach((childSnapshot) => {
-        const position = {
-          id: childSnapshot.key,
-          name: childSnapshot.val(),
-        };
-        positionsList.push(position);
-      });
-      setPositions(positionsList);
-    });
-
-    // Fetch payment methods from the database
     onValue(paymentMethodsRef, (snapshot) => {
       const paymentMethodsData = snapshot.val();
       const paymentMethodsList = [];
+
       snapshot.forEach((childSnapshot) => {
         const paymentMethod = {
           id: childSnapshot.key,
           name: childSnapshot.val().name,
-          description: childSnapshot.val().description.replace(/\n/g, "<br>"),
+          description: childSnapshot.val().description,
         };
         paymentMethodsList.push(paymentMethod);
       });
+
       setPaymentMethods(paymentMethodsList);
     });
   }, []);
@@ -1725,28 +1707,35 @@ const SettingsContent = () => {
     if (newDepartment.trim() !== "") {
       const db = getDatabase(app);
       const departmentsRef = ref(db, "departments");
-      push(departmentsRef, newDepartment);
+      const newDepartmentRef = push(departmentsRef);
+      set(newDepartmentRef, {
+        name: newDepartment,
+        positions: [],
+      });
       setNewDepartment("");
     }
   };
 
-  const handleAddPosition = () => {
+  const handleAddPosition = (departmentId) => {
     if (newPosition.trim() !== "") {
       const db = getDatabase(app);
-      const positionsRef = ref(db, "positions");
-      push(positionsRef, newPosition);
+      const positionsRef = ref(db, `departments/${departmentId}/positions`);
+      const newPositionRef = push(positionsRef);
+      set(newPositionRef, {
+        name: newPosition,
+        hierarchy: newPositionHierarchy,
+      });
       setNewPosition("");
+      setNewPositionHierarchy(1);
     }
   };
 
   const handleAddPaymentMethod = () => {
-    if (
-      newPaymentMethod.trim() !== "" &&
-      newPaymentMethodDescription.trim() !== ""
-    ) {
+    if (newPaymentMethod.trim() !== "" && newPaymentMethodDescription.trim() !== "") {
       const db = getDatabase(app);
       const paymentMethodsRef = ref(db, "paymentMethods");
-      push(paymentMethodsRef, {
+      const newPaymentMethodRef = push(paymentMethodsRef);
+      set(newPaymentMethodRef, {
         name: newPaymentMethod,
         description: newPaymentMethodDescription,
       });
@@ -1761,9 +1750,9 @@ const SettingsContent = () => {
     remove(departmentRef);
   };
 
-  const handleDeletePosition = (positionId) => {
+  const handleDeletePosition = (departmentId, positionId) => {
     const db = getDatabase(app);
-    const positionRef = ref(db, `positions/${positionId}`);
+    const positionRef = ref(db, `departments/${departmentId}/positions/${positionId}`);
     remove(positionRef);
   };
 
@@ -1776,128 +1765,197 @@ const SettingsContent = () => {
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
       <h2 className="text-2xl text-white">Settings</h2>
-      <div className="flex flex-col mt-8">
-        <h3 className="text-xl text-gray-300 mb-4">Departments</h3>
-        <ul className="mb-4 items-center">
-          {departments.map((department) => (
-            <li
-              key={department.id}
-              className="flex items-center justify-between py-2"
-            >
-              <span className="text-white">{department.name}</span>
-              <button
-                className="text-red-500"
-                onClick={() => handleDeleteDepartment(department.id)}
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="flex items-center">
-          <input
-            type="text"
-            placeholder="New Department"
-            value={newDepartment}
-            onChange={(e) => setNewDepartment(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 mr-2"
-          />
-          <button
-            className="bg-jukti-orange text-white px-4 py-2 rounded-md"
-            onClick={handleAddDepartment}
-          >
-            Add
-          </button>
-        </div>
-      </div>
-      <div className="mt-8">
-        <h3 className="text-xl text-gray-300 mb-4">Positions</h3>
-        <ul className="mb-4">
-          {positions.map((position) => (
-            <li
-              key={position.id}
-              className="flex items-center justify-between py-2"
-            >
-              <span className="text-white">{position.name}</span>
-              <button
-                className="text-red-500"
-                onClick={() => handleDeletePosition(position.id)}
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="flex items-center">
-          <input
-            type="text"
-            placeholder="New Position"
-            value={newPosition}
-            onChange={(e) => setNewPosition(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 mr-2"
-          />
-          <button
-            className="bg-jukti-orange text-white px-4 py-2 rounded-md"
-            onClick={handleAddPosition}
-          >
-            Add
-          </button>
-        </div>
-      </div>
-      <div className="mt-8">
-        <h3 className="text-xl text-gray-300 mb-4">Payment Methods</h3>
-        <ul className="mb-4">
-          {paymentMethods.map((paymentMethod) => (
-            <li
-              key={paymentMethod.id}
-              className="flex items-center justify-between py-2"
-            >
-              <div>
-                <span className="text-white font-bold text-xl">
-                  {paymentMethod.name}
-                </span>
-                <div
-                  className="formatted-text text-white"
-                  style={{ whiteSpace: "pre-wrap" }}
-                  dangerouslySetInnerHTML={{
-                    __html: paymentMethod.description,
-                  }}
-                ></div>
+
+      {/* Departments */}
+      <Disclosure>
+        {({ open }) => (
+          <>
+            <Disclosure.Button className="flex items-center justify-between w-full mt-8">
+              <h3 className="text-xl text-gray-300 mb-4">Departments</h3>
+              {open ? (<ChevronUpIcon className="w-5 h-5 text-white" />)
+                : (<ChevronDownIcon className="w-5 h-5 text-white" />)
+              }
+            </Disclosure.Button>
+
+            <Disclosure.Panel className="">
+              <div className="flex flex-col">
+                {/* Department items */}
+                {departments.map((department) => (
+                  <Disclosure key={department.id}>
+                    {({ open }) => (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <Disclosure.Button className="flex items-center justify-between py-2">
+                            <h4 className="text-lg text-white font-bold">{department.name}</h4>
+                            {open ? (<ChevronUpIcon className="w-5 h-5 text-white" />)
+                              : (<ChevronDownIcon className="w-5 h-5 text-white" />)
+                            }
+                          </Disclosure.Button>
+                          <button
+                            className="text-red-500"
+                            onClick={() => handleDeleteDepartment(department.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+
+                        <Disclosure.Panel className="pl-4 mt-2">
+                          {/* Positions */}
+                          <ul className="mb-4">
+                            {department.positions.map((position) => (
+                              <li key={position.id} className="flex items-center justify-between py-2">
+                                <span className="text-white">{position.name} - {position.hierarchy}</span>
+                                <button
+                                  className="text-red-500"
+                                  onClick={() => handleDeletePosition(department.id, position.id)}
+                                >
+                                  Delete
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+
+                          {/* Add new position */}
+                          <div className="flex items-center">
+                            <input
+                              type="text"
+                              placeholder="New Position"
+                              value={newPosition}
+                              onChange={(e) => setNewPosition(e.target.value)}
+                              className="border border-gray-300 rounded-md px-3 py-2 mr-2"
+                            />
+                            <input
+                              type="number"
+                              placeholder="Hierarchy"
+                              value={newPositionHierarchy}
+                              onChange={(e) => setNewPositionHierarchy(parseInt(e.target.value))}
+                              className="border border-gray-300 rounded-md px-3 py-2 mr-2"
+                            />
+                            <button
+                              className="bg-jukti-orange text-white px-4 py-2 rounded-md"
+                              onClick={() => handleAddPosition(department.id)}
+                            >
+                              Add
+                            </button>
+                          </div>
+                        </Disclosure.Panel>
+                      </>
+                    )}
+                  </Disclosure>
+                ))}
+
+                {/* Add new department */}
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    placeholder="New Department"
+                    value={newDepartment}
+                    onChange={(e) => setNewDepartment(e.target.value)}
+                    className="border border-gray-300 rounded-md px-3 py-2 mr-2"
+                  />
+                  <button
+                    className="bg-jukti-orange text-white px-4 py-2 rounded-md"
+                    onClick={handleAddDepartment}
+                  >
+                    Add
+                  </button>
+                </div>
               </div>
-              <button
-                className="text-red-500"
-                onClick={() => handleDeletePaymentMethod(paymentMethod.id)}
-              >
-                Delete
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="flex items-center">
-          <input
-            type="text"
-            placeholder="New Payment Method"
-            value={newPaymentMethod}
-            onChange={(e) => setNewPaymentMethod(e.target.value)}
-            className="border border-gray-300 rounded-md px-3 py-2 mr-2"
-          />
-          <button
-            className="bg-jukti-orange text-white px-4 py-2 rounded-md"
-            onClick={handleAddPaymentMethod}
-          >
-            Add
-          </button>
-        </div>
-        <textarea
-          placeholder="Description"
-          value={newPaymentMethodDescription}
-          onChange={(e) => setNewPaymentMethodDescription(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 mr-2 my-2 w-full h-auto"
-        />
-      </div>
+            </Disclosure.Panel>
+          </>
+        )}
+      </Disclosure>
+
+      {/* Payment Methods */}
+      <Disclosure>
+        {({ open }) => (
+          <>
+            <Disclosure.Button className="flex items-center justify-between mt-8">
+              <h3 className="text-xl text-gray-300 mb-4">Payment Methods</h3>
+              {open ? (<ChevronUpIcon className="w-5 h-5 text-white" />)
+                : (<ChevronDownIcon className="w-5 h-5 text-white" />)
+              }
+            </Disclosure.Button>
+
+            <Disclosure.Panel className="mt-4">
+              <div className="flex flex-col">
+                {/* Payment method items */}
+                {paymentMethods.map((paymentMethod) => (
+                  <Disclosure key={paymentMethod.id}>
+                    {({ open }) => (
+                      <>
+                      <div className="flex items-center justify-between">
+                        <Disclosure.Button className="flex items-center justify-between py-2">
+                          <span className="text-white font-bold text-xl">{paymentMethod.name}</span>
+                          {open ? (<ChevronUpIcon className="w-5 h-5 text-white" />)
+                            : (<ChevronDownIcon className="w-5 h-5 text-white" />)
+                          }
+                        </Disclosure.Button>
+                        <button
+                          className="text-red-500"
+                          onClick={() => handleDeletePaymentMethod(paymentMethod.id)}
+                        >
+                          Delete
+                        </button>
+                      </div>
+
+                        <Disclosure.Panel className="pl-4 mt-2">
+                          {/* Payment method description */}
+                          <div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-white font-bold text-xl">{paymentMethod.name}</span>
+                              <button
+                                className="text-red-500"
+                                onClick={() => handleDeletePaymentMethod(paymentMethod.id)}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                            <div
+                              className="formatted-text text-white"
+                              style={{ whiteSpace: 'pre-wrap' }}
+                              dangerouslySetInnerHTML={{
+                                __html: paymentMethod.description,
+                              }}
+                            ></div>
+                          </div>
+                        </Disclosure.Panel>
+                      </>
+                    )}
+                  </Disclosure>
+                ))}
+
+                {/* Add new payment method */}
+                <div className="flex items-center">
+                  <input
+                    type="text"
+                    placeholder="New Payment Method"
+                    value={newPaymentMethod}
+                    onChange={(e) => setNewPaymentMethod(e.target.value)}
+                    className="border border-gray-300 rounded-md px-3 py-2 mr-2"
+                  />
+                  <button
+                    className="bg-jukti-orange text-white px-4 py-2 rounded-md"
+                    onClick={handleAddPaymentMethod}
+                  >
+                    Add
+                  </button>
+                </div>
+                <textarea
+                  placeholder="Description"
+                  value={newPaymentMethodDescription}
+                  onChange={(e) => setNewPaymentMethodDescription(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 mr-2 my-2 w-full h-auto"
+                />
+              </div>
+            </Disclosure.Panel>
+          </>
+        )}
+      </Disclosure>
     </div>
   );
 };
+
 
 const UsersContent = ({ isAdmin }) => {
   const [users, setUsers] = useState([]);
@@ -1945,14 +2003,14 @@ const UsersContent = ({ isAdmin }) => {
 
   users.forEach((user) => {
     const department = user.department;
-    
+
     if (groupedUsers.hasOwnProperty(department)) {
       groupedUsers[department].push(user);
     } else {
       groupedUsers[department] = [user];
     }
   });
-  
+
   // Sort groups by priority or position
   Object.keys(groupedUsers).forEach((department) => {
     if (department === "Core Body" || department === "Advisory Board") {
@@ -1981,77 +2039,77 @@ const UsersContent = ({ isAdmin }) => {
           }
         }
       });
-  
+
       groupedUsers[department].sort((a, b) => a.priority - b.priority);
     } else {
       groupedUsers[department].sort((a, b) => a.position.localeCompare(b.position));
     }
   });
-  
-    
+
+
 
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
       <h2 className="text-2xl text-white">Board Members</h2>
       {Object.entries(groupedUsers).map(([department, departmentUsers]) => (
-    <div key={department} className="mt-8">
-      <Disclosure>
-      {({ open }) => (
-                      <>
-      <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
-        <span>{department}</span>
-        {open?(<ChevronUpIcon className="w-5 h-5 text-white" />)
-        :(<ChevronDownIcon className="w-5 h-5 text-white" />)
-        }
-      </Disclosure.Button>
-        <Disclosure.Panel className="pt-4 pb-2 text-sm text-white">
-        <div className="overflow-x-auto bg-gray-800 rounded-xl">
-          <div className="w-full">
-          <table className="w-full">
-            <thead>
-              <tr>
-                <th className="text-gray-300 text-left py-2 px-4 border-b">Name</th>
-                <th className="text-gray-300 text-left py-2 px-4 border-b">Position</th>
-                <th className="text-gray-300 text-left py-2 px-4 border-b">Department</th>
-                <th className="text-gray-300 text-left py-2 px-4 border-b">Email</th>
-                <th className="text-gray-300 text-left py-2 px-4 border-b">Contact</th>
-                {isAdmin && <th className="text-gray-300 text-left py-2 px-4 border-b">Admin</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {departmentUsers.map((user) => (
-                <tr key={user.uid}>
-                  <td className="text-white py-2 px-4 border-b">{user.name}</td>
-                  <td className="text-white py-2 px-4 border-b">{user.position}</td>
-                  <td className="text-white py-2 px-4 border-b">{user.department}</td>
-                  <td className="text-white py-2 px-4 border-b">{user.email}</td>
-                  <td className="text-white py-2 px-4 border-b">{user.contact}</td>
-                  {isAdmin && (
-                    <td className="text-white text-center py-2 px-4 border-b">
-                        <input
-                          type="checkbox"
-                          checked={user.isAdmin}
-                          onChange={(e) =>
-                            handleAdminCheckboxChange(
-                              user.uid,
-                              e.target.checked
-                            )
-                          }
-                        />
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          </div>
+        <div key={department} className="mt-8">
+          <Disclosure>
+            {({ open }) => (
+              <>
+                <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                  <span>{department}</span>
+                  {open ? (<ChevronUpIcon className="w-5 h-5 text-white" />)
+                    : (<ChevronDownIcon className="w-5 h-5 text-white" />)
+                  }
+                </Disclosure.Button>
+                <Disclosure.Panel className="pt-4 pb-2 text-sm text-white">
+                  <div className="overflow-x-auto bg-gray-800 rounded-xl">
+                    <div className="w-full">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">Name</th>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">Position</th>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">Department</th>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">Email</th>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">Contact</th>
+                            {isAdmin && <th className="text-gray-300 text-left py-2 px-4 border-b">Admin</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {departmentUsers.map((user) => (
+                            <tr key={user.uid}>
+                              <td className="text-white py-2 px-4 border-b">{user.name}</td>
+                              <td className="text-white py-2 px-4 border-b">{user.position}</td>
+                              <td className="text-white py-2 px-4 border-b">{user.department}</td>
+                              <td className="text-white py-2 px-4 border-b">{user.email}</td>
+                              <td className="text-white py-2 px-4 border-b">{user.contact}</td>
+                              {isAdmin && (
+                                <td className="text-white text-center py-2 px-4 border-b">
+                                  <input
+                                    type="checkbox"
+                                    checked={user.isAdmin}
+                                    onChange={(e) =>
+                                      handleAdminCheckboxChange(
+                                        user.uid,
+                                        e.target.checked
+                                      )
+                                    }
+                                  />
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </Disclosure.Panel>
+              </>
+            )}
+          </Disclosure>
         </div>
-        </Disclosure.Panel>
-        </>
-      )}
-</Disclosure>
-    </div>
-  ))}
+      ))}
     </div>
   );
 };
@@ -2913,8 +2971,8 @@ const CalenderContent = ({ department, isAdmin }) => {
                   value={
                     isEditing
                       ? moment(editedEventStartDateTime).format(
-                          "YYYY-MM-DDTHH:mm"
-                        )
+                        "YYYY-MM-DDTHH:mm"
+                      )
                       : moment(selectedEvent.start).format("YYYY-MM-DDTHH:mm")
                   }
                   onChange={(e) =>
@@ -2937,8 +2995,8 @@ const CalenderContent = ({ department, isAdmin }) => {
                   value={
                     isEditing
                       ? moment(editedEventEndDateTime).format(
-                          "YYYY-MM-DDTHH:mm"
-                        )
+                        "YYYY-MM-DDTHH:mm"
+                      )
                       : moment(selectedEvent.end).format("YYYY-MM-DDTHH:mm")
                   }
                   onChange={(e) =>

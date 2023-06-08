@@ -19,41 +19,37 @@ const Register = () => {
     password: '',
   });
 
-  const [positions, setPositions] = useState([]);
   const [departments, setDepartments] = useState([]);
-
-  const fetchPositions = async () => {
-    try {
-      const positionsRef = ref(database, 'positions');
-
-      onValue(positionsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const positions = Object.entries(data).map(([id, name]) => ({
-            id,
-            name,
-          }));
-          setPositions(positions);
-        }
-      });
-    } catch (error) {
-      windows.alert('Error fetching positions:', error);
-    }
-  };
 
   const fetchDepartments = async () => {
     try {
       const departmentsRef = ref(database, 'departments');
 
       onValue(departmentsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (data) {
-          const departments = Object.entries(data).map(([id, name]) => ({
-            id,
-            name,
-          }));
-          setDepartments(departments);
-        }
+        const departmentsData = snapshot.val();
+        const departmentsList = [];
+
+        snapshot.forEach((childSnapshot) => {
+          const department = {
+            id: childSnapshot.key,
+            name: childSnapshot.val().name,
+            positions: [],
+          };
+
+          const positionsSnapshot = childSnapshot.child("positions");
+          positionsSnapshot.forEach((positionSnapshot) => {
+            const position = {
+              id: positionSnapshot.key,
+              name: positionSnapshot.val().name,
+              hierarchy: positionSnapshot.val().hierarchy,
+            };
+            department.positions.push(position);
+          });
+
+          departmentsList.push(department);
+        });
+
+        setDepartments(departmentsList);
       });
     } catch (error) {
       window.alert('Error fetching departments:', error);
@@ -62,7 +58,6 @@ const Register = () => {
 
   useEffect(() => {
     fetchDepartments();
-    fetchPositions();
   }, []);
 
   const handleChange = (e) => {
@@ -195,28 +190,6 @@ const Register = () => {
               />
             </div>
             <div className="mb-4">
-              <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="position">
-                Position
-              </label>
-              <select
-                className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
-                name="position"
-                id="position"
-                value={formData.position}
-                onChange={handleChange}
-                required
-              >
-                <option value="">
-                  Select Position
-                </option>
-                {positions.map((position) => (
-                  <option key={position.id} value={position.name}>
-                    {position.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="mb-4">
               <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="department">
                 Department
               </label>
@@ -228,9 +201,7 @@ const Register = () => {
                 onChange={handleChange}
                 required
               >
-                <option value="">
-                  Select Department
-                </option>
+                <option value="">Select Department</option>
                 {departments.map((department) => (
                   <option key={department.id} value={department.name}>
                     {department.name}
@@ -238,6 +209,30 @@ const Register = () => {
                 ))}
               </select>
             </div>
+
+            {formData.department !== '' && (
+              <div className="mb-4">
+                <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="position">
+                  Position
+                </label>
+                <select
+                  className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+                  name="position"
+                  id="position"
+                  value={formData.position}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Position</option>
+                  {departments.find((department) => department.id === formData.department)?.positions.map((position) => (
+                    <option key={position.id} value={position.name}>
+                      {position.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="mb-4">
               <label className="block text-gray-300 text-sm font-bold mb-2" htmlFor="password">
                 Password
