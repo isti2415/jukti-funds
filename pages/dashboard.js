@@ -1698,7 +1698,6 @@ const AllExpenseContent = () => {
       "Method",
       "Payment Details",
       "Trx ID",
-      "File",
     ];
 
     const generateTableRows = () => {
@@ -1712,10 +1711,9 @@ const AllExpenseContent = () => {
           expense.date,
           expense.amount,
           expense.title,
-          expense.method,
-          expense.paymentDetails,
-          expense.trxId,
-          expense.file,
+          expense.paymentMethod,
+          expense.paymentMethodDetails,
+          expense.transactionId,
         ];
         tableRows.push(rowData);
       });
@@ -1744,6 +1742,8 @@ const AllExpenseContent = () => {
           19,
           { align: "right" }
         ); // Add text aligned to the right
+          
+
         doc.autoTable(tableColumn, generateTableRows(pageExpenses), {
           startY: 30,
         });
@@ -2869,44 +2869,127 @@ const UsersContent = ({ isAdmin }) => {
       groupedUsers[department] = [user];
     }
   });
+  
+  const departmentsRef = ref(db, "departments");
 
-  // Sort groups by priority or position
-  Object.keys(groupedUsers).forEach((department) => {
-    if (department === "Core Body" || department === "Advisory Board") {
-      groupedUsers[department].forEach((user) => {
-        if (department === "Core Body") {
-          if (user.position === "President") {
-            user.priority = 1;
-          } else if (user.position === "Vice President") {
-            user.priority = 2;
-          } else if (user.position === "General Secretary") {
-            user.priority = 3;
-          } else if (user.position === "Joint Secretary") {
-            user.priority = 4;
-          } else if (user.position === "Treasurer") {
-            user.priority = 5;
-          }
-        } else if (department === "Advisory Board") {
-          if (user.position === "Student Advisor") {
-            user.priority = 1;
-          } else if (user.position === "Strategic Advisor") {
-            user.priority = 2;
-          } else if (user.position === "Operations Advisor") {
-            user.priority = 3;
-          } else if (user.position === "Subject Matter Expert") {
-            user.priority = 4;
-          }
-        }
+  const [departments, setDepartments] = useState([]);
+
+// Fetch departments data
+useEffect(() => {
+  const departmentsRef = ref(db, "departments");
+
+  const fetchDepartments = async () => {
+    try {
+      const snapshot = await get(departmentsRef);
+      const departmentsData = snapshot.val();
+      const departmentsList = [];
+
+      snapshot.forEach((childSnapshot) => {
+        const department = {
+          id: childSnapshot.key,
+          name: childSnapshot.val().name,
+          positions: [],
+        };
+
+        const positionsSnapshot = childSnapshot.child("positions");
+        positionsSnapshot.forEach((positionSnapshot) => {
+          const position = {
+            id: positionSnapshot.key,
+            name: positionSnapshot.val().name,
+            hierarchy: positionSnapshot.val().hierarchy,
+          };
+          department.positions.push(position);
+        });
+
+        departmentsList.push(department);
       });
 
-      groupedUsers[department].sort((a, b) => a.priority - b.priority);
-    } else {
-      groupedUsers[department].sort((a, b) =>
-        a.position.localeCompare(b.position)
-      );
-    }
-  });
+      setDepartments(departmentsList);const [departments, setDepartments] = useState([]);
 
+      // Fetch departments data
+      useEffect(() => {
+        const departmentsRef = ref(db, "departments");
+      
+        const fetchDepartments = async () => {
+          try {
+            const snapshot = await get(departmentsRef);
+            const departmentsData = snapshot.val();
+            const departmentsList = [];
+      
+            snapshot.forEach((childSnapshot) => {
+              const department = {
+                id: childSnapshot.key,
+                name: childSnapshot.val().name,
+                positions: [],
+              };
+      
+              const positionsSnapshot = childSnapshot.child("positions");
+              positionsSnapshot.forEach((positionSnapshot) => {
+                const position = {
+                  id: positionSnapshot.key,
+                  name: positionSnapshot.val().name,
+                  hierarchy: positionSnapshot.val().hierarchy,
+                };
+                department.positions.push(position);
+              });
+      
+              departmentsList.push(department);
+            });
+      
+            setDepartments(departmentsList);
+          } catch (error) {
+            console.error("Error fetching departments:", error);
+          }
+        };
+      
+        fetchDepartments();
+      }, []);
+      
+      const getHierarchy = (department, position) => {
+        const departmentData = departments.find((d) => d.name === department);
+        if (departmentData) {
+          const positionData = departmentData.positions.find((p) => p.name === position);
+          if (positionData) {
+            return positionData.hierarchy;
+          }
+        }
+        return -1; // Return a default value if hierarchy is not found
+      };
+      
+      // Iterate over departments in groupedUsers
+      Object.keys(groupedUsers).forEach((department) => {
+        groupedUsers[department] = groupedUsers[department].sort((a, b) => {
+          return getHierarchy(department, a.position) - getHierarchy(department, b.position);
+        });
+      });
+      
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+    }
+  };
+
+  fetchDepartments();
+}, []);
+
+const getHierarchy = (department, position) => {
+  const departmentData = departments.find((d) => d.name === department);
+  if (departmentData) {
+    const positionData = departmentData.positions.find((p) => p.name === position);
+    if (positionData) {
+      return positionData.hierarchy;
+    }
+  }
+  return -1; // Return a default value if hierarchy is not found
+};
+
+// Iterate over departments in groupedUsers
+Object.keys(groupedUsers).forEach((department) => {
+  groupedUsers[department] = groupedUsers[department].sort((a, b) => {
+    return getHierarchy(department, a.position) - getHierarchy(department, b.position);
+  });
+});
+
+  
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
       <h2 className="text-2xl text-white">Board Members</h2>
