@@ -224,7 +224,7 @@ const Register = () => {
                   required
                 >
                   <option value="">Select Position</option>
-                  {departments.find((department) => department.id === formData.department)?.positions.map((position) => (
+                  {departments.find((department) => department.name === formData.department)?.positions.map((position) => (
                     <option key={position.id} value={position.name}>
                       {position.name}
                     </option>

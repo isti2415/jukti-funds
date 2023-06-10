@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, use } from "react";
 import React from "react";
 import { useRouter } from "next/router";
 import Layout from "../components/layout";
@@ -23,7 +23,7 @@ import {
   off,
 } from "firebase/database";
 import app from "./api/firebaseConfig";
-import { Disclosure } from "@headlessui/react";
+import { Disclosure, Transition } from "@headlessui/react";
 import jsCookie from "js-cookie";
 import { Calendar, momentLocalizer, Views } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -33,16 +33,53 @@ import "jspdf-autotable";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilePdf, faMailBulk } from "@fortawesome/free-solid-svg-icons";
 import { ChevronUpIcon, ChevronDownIcon } from "@heroicons/react/solid";
+import {
+  getStorage,
+  ref as storagesRef,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
+import Link from "next/link";
 
 const localizer = momentLocalizer(moment);
+
+const db = getDatabase(app);
+
+const auth = getAuth(app);
+
+const getMonthOptions = () => {
+  return [
+    <option value="">Select Month</option>,
+    <option value="January">January</option>,
+    <option value="February">February</option>,
+    <option value="March">March</option>,
+    <option value="April">April</option>,
+    <option value="May">May</option>,
+    <option value="June">June</option>,
+    <option value="July">July</option>,
+    <option value="August">August</option>,
+    <option value="September">September</option>,
+    <option value="October">October</option>,
+    <option value="November">November</option>,
+    <option value="December">December</option>
+  ];
+};
+
+const getYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  const years = [];
+  years.push(<option value="">Select Year</option>);
+  for (let i = 2023; i<= currentYear+5; i++) {
+    years.push(<option value={i}>{i}</option>);
+  }
+  return years;
+};
 
 const Dashboard = () => {
   const router = useRouter();
 
-  const auth = getAuth(app); // Get the authentication instance
-
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
-  const [selectedMenu, setSelectedMenu] = useState("Payment");
+  const [selectedMenu, setSelectedMenu] = useState("calender");
   const [isAdmin, setIsAdmin] = useState(false); // Default value set to false
   const [department, setDepartment] = useState("");
   const [position, setPosition] = useState("");
@@ -59,7 +96,6 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchUserIsAdmin = (email) => {
-      const db = getDatabase(app);
       const usersRef = ref(db, "users");
 
       onValue(usersRef, (snapshot) => {
@@ -146,107 +182,140 @@ const Dashboard = () => {
         </div>
         <div className="flex overflow-x-hidden">
           <div
-            className={`bg-gray-800 fixed top-10 min-h-screen right-0 ${isMenuExpanded ? "w-64" : "w-0"
-              } transition-width duration-300 overflow-y-auto transition-all ease-in-out`}
+            className={`bg-gray-800 fixed top-10 min-h-screen right-0 ${
+              isMenuExpanded ? "w-64" : "w-0"
+            } transition-width duration-300 overflow-y-auto transition-all ease-in-out`}
             style={{ zIndex: 999 }}
           >
             {/* Menu content */}
             {isMenuExpanded && (
               <ul className="mt-8">
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "Payment"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "Payment"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("Payment")}
                 >
-                  <span className="text-white">Make Payment</span>
+                  <span className="text-white">Record Deposit</span>
                 </li>
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "PaymentHistory"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "RecordExpense"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
+                  onClick={() => handleMenuSelection("RecordExpense")}
+                >
+                  <span className="text-white">Record Expense</span>
+                </li>
+                <li
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "PaymentHistory"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("PaymentHistory")}
                 >
                   <span className="text-white">Payment History</span>
                 </li>
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "allpayment"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                      }`}
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "allpayment"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
                     onClick={() => handleMenuSelection("allpayment")}
                   >
-                    <span className="text-white">All Payments</span>
+                    <span className="text-white">All Deposits</span>
                   </li>
                 ) : null}
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "pendingpayment"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                      }`}
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "allexpense"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
+                    onClick={() => handleMenuSelection("allexpense")}
+                  >
+                    <span className="text-white">All Expenses</span>
+                  </li>
+                ) : null}
+                {isAdmin ? (
+                  <li
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "pendingpayment"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
                     onClick={() => handleMenuSelection("pendingpayment")}
                   >
-                    <span className="text-white">Pending Payments</span>
+                    <span className="text-white">Pending Requests</span>
                   </li>
                 ) : null}
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "reports"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                      }`}
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "reports"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
                     onClick={() => handleMenuSelection("reports")}
                   >
                     <span className="text-white">Reports</span>
                   </li>
                 ) : null}
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "calender"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "calender"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("calender")}
                 >
                   <span className="text-white">Event Calender</span>
                 </li>
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "users"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "users"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("users")}
                 >
                   <span className="text-white">Board Members</span>
                 </li>
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "profile"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "profile"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("profile")}
                 >
                   <span className="text-white">Profile</span>
                 </li>
                 {isAdmin ? (
                   <li
-                    className={`py-2 pl-4 cursor-pointer ${selectedMenu === "settings"
-                      ? "bg-jukti-orange"
-                      : "hover:bg-gray-800"
-                      }`}
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "settings"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
                     onClick={() => handleMenuSelection("settings")}
                   >
                     <span className="text-white">Settings</span>
                   </li>
                 ) : null}
                 <li
-                  className={`py-2 pl-4 cursor-pointer ${selectedMenu === "logout"
-                    ? "bg-jukti-orange"
-                    : "hover:bg-gray-800"
-                    }`}
+                  className={`py-2 pl-4 cursor-pointer ${
+                    selectedMenu === "logout"
+                      ? "bg-jukti-orange"
+                      : "hover:bg-gray-800"
+                  }`}
                   onClick={() => handleMenuSelection("logout")}
                 >
                   <span className="text-white">Logout</span>
@@ -255,14 +324,13 @@ const Dashboard = () => {
             )}
           </div>
           <div className=" bg-gray-900 min-h-full mb-4">
-            {selectedMenu === "Payment" && (
-              <PaymentContent handleMenuSelection={handleMenuSelection} />
-            )}
+            {selectedMenu === "Payment" && <PaymentContent />}
+            {selectedMenu === "RecordExpense" && <RecordExpenseContent />}
             {selectedMenu === "PaymentHistory" && <PaymentHistoryContent />}
             {selectedMenu === "profile" && <ProfileContent />}
             {selectedMenu === "allpayment" && <AllPaymentContent />}
             {selectedMenu === "reports" && (
-              <ReportsContent currentUserName={name} />
+              <ReportsContent currentUserName={name} currentUserPosition={position} />
             )}
             {selectedMenu === "calender" && (
               <CalenderContent department={department} isAdmin={isAdmin} />
@@ -270,6 +338,7 @@ const Dashboard = () => {
             {selectedMenu === "settings" && <SettingsContent />}
             {selectedMenu === "users" && <UsersContent isAdmin={isAdmin} />}
             {selectedMenu === "pendingpayment" && <PendingPaymentContent />}
+            {selectedMenu === "allexpense" && <AllExpenseContent />}
           </div>
         </div>
       </Layout>
@@ -278,9 +347,6 @@ const Dashboard = () => {
 };
 
 const PaymentContent = () => {
-  const auth = getAuth(app);
-  const db = getDatabase(app);
-
   const [duplicate, setDuplicate] = useState(false);
   const [trxDuplicate, setTrxDuplicate] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState([]);
@@ -395,8 +461,9 @@ const PaymentContent = () => {
   ]);
 
   const savePaymentData = (paymentData) => {
-    paymentData.emailMonthYearStatus = `${jsCookie.get("userEmail")}_${paymentData.month
-      }_${paymentData.year}_${paymentData.status}`;
+    paymentData.emailMonthYearStatus = `${jsCookie.get("userEmail")}_${
+      paymentData.month
+    }_${paymentData.year}_${paymentData.status}`;
     const paymentsRef = ref(db, "payments");
     push(paymentsRef, {
       ...paymentData,
@@ -412,7 +479,7 @@ const PaymentContent = () => {
         className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75"
         style={{ zIndex: 1000 }}
       >
-        <div className="max-w-6xl max-h-screen grid w-screen grid-cols-1 bg-gray-800 rounded-lg p-4">
+        <div className="max-w-6xl max-h-screen grid w-screen grid-cols-1 bg-gray-900 rounded-lg p-4">
           <div className="flex justify-between items-center">
             <h2 className="text-2xl text-white px-4 py-2 rounded-t-lg">
               Payment Methods
@@ -431,18 +498,27 @@ const PaymentContent = () => {
                   <Disclosure className="">
                     {({ open }) => (
                       <>
-                        <Disclosure.Button className="flex flex-auto justify-center bg-orange-500 hover:bg-orange-600 w-full text-white font-bold py-4 my-4 px-4 rounded focus:outline-none focus:shadow-outline">
+                        <Disclosure.Button className="flex justify-between w-full px-4 py-2 my-4 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
                           <h3 className="text-xl">{paymentMethod.name}</h3>
                         </Disclosure.Button>
-                        <Disclosure.Panel className="px-4 pt-4 pb-2 text-white text-lg">
-                          <div
-                            className="formatted-text"
-                            style={{ whiteSpace: "pre-wrap" }}
-                            dangerouslySetInnerHTML={{
-                              __html: paymentMethod.description,
-                            }}
-                          ></div>
-                        </Disclosure.Panel>
+                        <Transition
+                          enter="transition duration-200 ease-out"
+                          enterFrom="opacity-0"
+                          enterTo="opacity-100"
+                          leave="transition duration-150 ease-out"
+                          leaveFrom="opacity-100"
+                          leaveTo="opacity-0"
+                        >
+                          <Disclosure.Panel className="px-4 pt-4 pb-2 text-white text-lg bg-gray-800 rounded-lg">
+                            <div
+                              className="formatted-text"
+                              style={{ whiteSpace: "pre-wrap" }}
+                              dangerouslySetInnerHTML={{
+                                __html: paymentMethod.description,
+                              }}
+                            ></div>
+                          </Disclosure.Panel>
+                        </Transition>
                       </>
                     )}
                   </Disclosure>
@@ -460,7 +536,7 @@ const PaymentContent = () => {
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl text-white">Make Payment</h2>
+        <h2 className="text-2xl text-white">Record Deposit</h2>
         <button
           class="bg-jukti-orange hover:bg-jukti-orange-dark text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline inline-block ml-4"
           onClick={() => setShowModal(true)}
@@ -493,19 +569,7 @@ const PaymentContent = () => {
               required
               className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
             >
-              <option value="">Select Month</option>
-              <option value="January">January</option>
-              <option value="February">February</option>
-              <option value="March">March</option>
-              <option value="April">April</option>
-              <option value="May">May</option>
-              <option value="June">June</option>
-              <option value="July">July</option>
-              <option value="August">August</option>
-              <option value="September">September</option>
-              <option value="October">October</option>
-              <option value="November">November</option>
-              <option value="December">December</option>
+              {getMonthOptions()}
             </select>
           </div>
           <div className="mb-4">
@@ -527,15 +591,7 @@ const PaymentContent = () => {
               required
               className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
             >
-              <option value="">Select Year</option>
-              {Array.from({ length: 6 }).map((_, index) => {
-                const year = new Date().getFullYear() - index;
-                return (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                );
-              })}
+              {getYearOptions()}
             </select>
           </div>
         </div>
@@ -629,32 +685,76 @@ const PaymentContent = () => {
 
 const PendingPaymentContent = () => {
   const [pendingPayments, setPendingPayments] = useState([]);
+  const [pendingExpenses, setPendingExpenses] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+  const [expenseTrxId, setExpenseTrxId] = useState("");
+
+  const paymentsRef = ref(db, "payments");
+  const expensesRef = ref(db, "expenses");
+  const usersRef = ref(db, "users");
 
   useEffect(() => {
-    const db = getDatabase(app);
-    const paymentsRef = ref(db, "payments");
-
-    const fetchPendingPayments = (snapshot) => {
-      if (snapshot.exists()) {
-        const paymentsData = snapshot.val();
-        const pendingPayments = Object.entries(paymentsData)
-          .filter(([_, payment]) => payment.status === "Pending")
-          .map(([id, payment]) => ({ id, ...payment }));
-        setPendingPayments(pendingPayments);
-      } else {
-        setPendingPayments([]);
-      }
-    };
-
-    const listener = onValue(paymentsRef, fetchPendingPayments);
+    const paymentListener = onValue(paymentsRef, fetchPendingPayments);
 
     return () => {
-      off(paymentsRef, "value", listener);
+      off(paymentsRef, "value", paymentListener);
     };
   }, []);
 
-  const handleAccept = (paymentId) => {
-    const db = getDatabase(app);
+  useEffect(() => {
+    const expenseListener = onValue(expensesRef, fetchPendingExpenses);
+
+    return () => {
+      off(expensesRef, "value", expenseListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    const usersListener = onValue(usersRef, fetchAllUsers);
+
+    return () => {
+      off(usersRef, "value", usersListener);
+    };
+  }, []);
+
+  const fetchPendingPayments = (snapshot) => {
+    if (snapshot.exists()) {
+      const paymentsData = snapshot.val();
+      const pendingPayments = Object.entries(paymentsData)
+        .filter(([_, payment]) => payment.status === "Pending")
+        .map(([id, payment]) => ({ id, ...payment }));
+      setPendingPayments(pendingPayments);
+    } else {
+      setPendingPayments([]);
+    }
+  };
+
+  const fetchPendingExpenses = (snapshot) => {
+    if (snapshot.exists()) {
+      const expensesData = snapshot.val();
+      const pendingExpenses = Object.entries(expensesData)
+        .filter(([_, expense]) => expense.status === "Pending")
+        .map(([id, expense]) => ({ id, ...expense }));
+      setPendingExpenses(pendingExpenses);
+    } else {
+      setPendingExpenses([]);
+    }
+  };
+
+  const fetchAllUsers = (snapshot) => {
+    if (snapshot.exists()) {
+      const usersData = snapshot.val();
+      const allUsers = Object.entries(usersData).map(([id, user]) => ({
+        id,
+        ...user,
+      }));
+      setAllUsers(allUsers);
+    } else {
+      setAllUsers([]);
+    }
+  };
+
+  const handleDepositAccept = (paymentId) => {
     const paymentRef = ref(db, `payments/${paymentId}`);
     update(paymentRef, { status: "Accepted" })
       .then(() => {
@@ -677,8 +777,7 @@ const PendingPaymentContent = () => {
       });
   };
 
-  const handleReject = (paymentId) => {
-    const db = getDatabase(app);
+  const handleDepositReject = (paymentId) => {
     const paymentRef = ref(db, `payments/${paymentId}`);
     update(paymentRef, { status: "Rejected" })
       .then(() => {
@@ -701,88 +800,356 @@ const PendingPaymentContent = () => {
       });
   };
 
-  return (
-    <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
-      <h2 className="text-2xl text-white mb-6">Pending Payments</h2>
-      {pendingPayments.length > 0 ? (
-        <div className="overflow-x-auto bg-gray-800 p-2 rounded-xl">
-          <div className="w-full">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="text-gray-300 text-center py-2 px-2 border-b">
-                    User
-                  </th>
-                  <th className="text-gray-300 text-center py-2 px-2 border-b">
-                    Payment Method
-                  </th>
-                  <th className="text-gray-300 text-center py-2 px-2 border-b">
-                    Number
-                  </th>
-                  <th className="text-gray-300 text-center py-2 px-2 border-b">
-                    Transaction ID
-                  </th>
-                  <th className="text-gray-300 text-center py-2 px-2 border-b">
-                    Month
-                  </th>
-                  <th className="text-gray-300 text-center py-2 px-2 border-b">
-                    Year
-                  </th>
-                  <th className="text-gray-300 text-center py-2 px-2 border-b">
-                    Amount
-                  </th>
-                  <th className="text-gray-300 text-center py-2 px-2 border-b">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {pendingPayments.map((payment) => (
-                  <tr key={payment.id}>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.email}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.paymentMethod}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.number}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.transactionId}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.month}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.year}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.amount} BDT
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      <button
-                        className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline mr-2 mb-2"
-                        onClick={() => handleAccept(payment.id)}
-                      >
-                        Accept
-                      </button>
-                      <button
-                        className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline"
-                        onClick={() => handleReject(payment.id)}
-                      >
-                        Reject
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+  const handleExpenseAccept = (expenseId) => {
+    const expenseRef = ref(db, `expenses/${expenseId}`);
+    update(expenseRef, { status: "Accepted", transactionId: expenseTrxId })
+  .then(() => {
+    const updatedExpenses = pendingExpenses.map((expense) => {
+      if (expense.id === expenseId) {
+        return {
+          ...expense,
+          status: "Accepted",
+          transactionId: expenseTrxId,
+        };
+      }
+      return expense;
+    });
+    const expenses = updatedExpenses.filter(
+      (expense) => expense.id !== expenseId
+    );
+    setPendingExpenses(expenses);
+  })
+  .catch((error) => {
+    console.log("Error accepting expense:", error);
+  });
+  };
+
+  const handleExpenseReject = (expenseId) => {
+    const expenseRef = ref(db, `expenses/${expenseId}`);
+    update(expenseRef, { status: "Rejected" })
+      .then(() => {
+        const updatedExpenses = pendingExpenses.map((expense) => {
+          if (expense.id === expenseId) {
+            return {
+              ...expense,
+              status: "Rejected",
+            };
+          }
+          return expense;
+        });
+        const expenses = updatedExpenses.filter(
+          (expense) => expense.id !== expenseId
+        );
+        setPendingExpenses(expenses);
+      })
+      .catch((error) => {
+        console.log("Error rejecting expense:", error);
+      });
+  };
+
+  const getUser = (email) => {
+    const user = allUsers.find((user) => user.email === email);
+    return user ? user : null;
+  };
+
+  const [expenseAcceptModal, setExpenseAcceptModal] = useState(false);
+
+  const ExpenseAcceptModal = ({ expenseId, onClose }) => {
+    const inputRef = useRef(null);
+  
+    const handleSubmit = (e) => {
+      e.preventDefault();
+      handleExpenseAccept(expenseId);
+      setExpenseTrxId("");
+    };
+
+    useEffect(() => {
+      inputRef.current.focus();
+    }, []);
+  
+    const handleInputChange = (e) => {
+      setExpenseTrxId(e.target.value);
+    };
+  
+    return (
+      <div className="fixed inset-0 flex items-center justify-center z-50">
+      <div className="max-w-3xl w-full bg-gray-800 rounded-lg p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl text-white">Accept Expense</h2>
+          <button
+            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            onClick={onClose}
+          >
+            Close
+          </button>
         </div>
-      ) : (
-        <p className="text-white">No pending payments found.</p>
+        <form className="flex flex-col items-center justify-center" onSubmit={handleSubmit}>
+          <div className="flex flex-col items-center justify-center">
+            <label className="text-white">Transaction ID</label>
+            <input
+              ref={inputRef}
+              className="w-64 px-2 py-1 mb-4 text-black rounded-lg"
+              type="text"
+              value={expenseTrxId}
+              onChange={handleInputChange}
+            />
+          </div>
+          <button className="px-4 py-2 mt-4 text-white bg-green-500 rounded-lg" type="submit">
+            Accept
+          </button>
+        </form>
+      </div>
+    </div>
+    );
+  };
+
+  return (
+    <div className="max-w-6xl grid w-screen grid-cols-1 pr-8 gap-8">
+      <h2 className="text-2xl text-white">Pending Requests</h2>
+      <Disclosure>
+        {({ open }) => (
+          <>
+            <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+              <span className="text-lg">Pending Deposits</span>
+              <ChevronDownIcon
+                className={`${
+                  open ? "transform rotate-180" : ""
+                } w-5 h-5 text-white`}
+              />
+            </Disclosure.Button>
+            <Transition
+              show={open}
+              enter="transition duration-100 ease-out"
+              enterFrom="transform scale-95 opacity-0"
+              enterTo="transform scale-100 opacity-100"
+              leave="transition duration-75 ease-out"
+              leaveFrom="transform scale-100 opacity-100"
+              leaveTo="transform scale-95 opacity-0"
+            >
+              <Disclosure.Panel className="px-4 pb-2 text-sm text-gray-500">
+                {pendingPayments.length > 0 ? (
+                  <div className="overflow-x-auto bg-gray-800 p-2 rounded-xl">
+                    <div className="w-full">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              User
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Payment Method
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Number
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Transaction ID
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Month
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Year
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Amount
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pendingPayments.map((payment) => (
+                            <tr key={payment.id}>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.email}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.paymentMethod}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.number}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.transactionId}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.month}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.year}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.amount} BDT
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                <button
+                                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline mr-2 mb-2"
+                                  onClick={() =>
+                                    handleDepositAccept(payment.id)
+                                  }
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline"
+                                  onClick={() =>
+                                    handleDepositReject(payment.id)
+                                  }
+                                >
+                                  Reject
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-white">No Pending Requests found.</p>
+                )}
+              </Disclosure.Panel>
+            </Transition>
+          </>
+        )}
+      </Disclosure>
+      <Disclosure>
+        {({ open }) => (
+          <>
+            <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+              <span className="text-lg">Pending Expenses</span>
+              <ChevronDownIcon
+                className={`${
+                  open ? "transform rotate-180" : ""
+                } w-5 h-5 text-white`}
+              />
+            </Disclosure.Button>
+            <Transition
+              show={open}
+              enter="transition duration-100 ease-out"
+              enterFrom="transform scale-95 opacity-0"
+              enterTo="transform scale-100 opacity-100"
+              leave="transition duration-75 ease-out"
+              leaveFrom="transform scale-100 opacity-100"
+              leaveTo="transform scale-95 opacity-0"
+            >
+              <Disclosure.Panel className="px-4 pb-2 text-sm text-gray-500">
+                {pendingExpenses.length > 0 ? (
+                  <div className="overflow-x-auto bg-gray-800 p-2 rounded-xl">
+                    <div className="w-full">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              Name
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              Position
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              Department
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              Date
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              Amount
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              Title
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              Details
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              Method
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              Payment Details
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              File
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-2 border-b">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pendingExpenses.map((expense) => (
+                            <tr key={expense.id}>
+                              <td className="text-white py-2 px-2 border-b">
+                                {getUser(expense.email)?.name}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {getUser(expense.email)?.position}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {getUser(expense.email)?.department}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {expense.date}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {expense.amount}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {expense.title}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {expense.details}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {expense.paymentMethod}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {expense.paymentMethodDetails}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                <Link
+                                  href={expense.fileUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-500 hover:text-blue-400"
+                                >
+                                  View
+                                </Link>
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                <button
+                                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline"
+                                  onClick={() => setExpenseAcceptModal(true)}
+                                >
+                                  Accept
+                                </button>
+                                {expenseAcceptModal && (
+        <ExpenseAcceptModal expenseId={expense.id} onClose={() => setExpenseAcceptModal(false)} />
       )}
+                                <button
+                                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline"
+                                  onClick={() =>
+                                    handleExpenseReject(expense.id)
+                                  }
+                                >
+                                  Reject
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-white">No Pending Expenses found.</p>
+                )}
+              </Disclosure.Panel>
+            </Transition>
+          </>
+        )}
+      </Disclosure>
     </div>
   );
 };
@@ -795,36 +1162,35 @@ const AllPaymentContent = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [filteredPayments, setFilteredPayments] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
 
-  useEffect(() => {
-    const fetchAllPayments = () => {
-      const db = getDatabase(app);
-      const paymentsRef = ref(db, "payments");
+  const fetchData = () => {
+    const paymentsRef = ref(db, "payments");
+    const departmentsRef = ref(db, "departments");
+    const usersRef = ref(db, "users");
 
-      onValue(paymentsRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const paymentsData = snapshot.val();
+    Promise.all([get(paymentsRef), get(departmentsRef), get(usersRef)])
+      .then((results) => {
+        const [paymentsSnapshot, departmentsSnapshot, usersSnapshot] = results;
+
+        if (paymentsSnapshot.exists()) {
+          const paymentsData = paymentsSnapshot.val();
           const allPayments = Object.entries(paymentsData)
             .filter(([_, payment]) => payment.status === "Accepted")
             .map(([id, payment]) => ({ id, ...payment }));
           setPayments(allPayments.reverse());
+          setFilteredPayments(allPayments.reverse()); // Set filtered payments initially
         } else {
           setPayments([]);
+          setFilteredPayments([]);
         }
-      });
-    };
 
-    const fetchDepartments = () => {
-      const db = getDatabase(app);
-      const departmentsRef = ref(db, "departments");
-
-      onValue(departmentsRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const departmentsData = snapshot.val();
+        if (departmentsSnapshot.exists()) {
+          const departmentsData = departmentsSnapshot.val();
           const allDepartments = Object.entries(departmentsData).map(
             ([id, department]) => ({
               id,
-              name,
               ...department,
             })
           );
@@ -832,16 +1198,9 @@ const AllPaymentContent = () => {
         } else {
           setDepartments([]);
         }
-      });
-    };
 
-    const fetchAllUsers = () => {
-      const db = getDatabase(app);
-      const usersRef = ref(db, "users");
-
-      onValue(usersRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const usersData = snapshot.val();
+        if (usersSnapshot.exists()) {
+          const usersData = usersSnapshot.val();
           const allUsers = Object.entries(usersData).map(([id, user]) => ({
             id,
             ...user,
@@ -850,73 +1209,57 @@ const AllPaymentContent = () => {
         } else {
           setAllUsers([]);
         }
+      })
+      .catch((error) => {
+        console.log(error);
       });
-    };
+  };
 
-    fetchAllUsers();
-    fetchDepartments();
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-    if (
-      selectedMonth === "" &&
-      selectedYear === "" &&
-      selectedUser === "" &&
-      selectedDepartment === ""
-    ) {
-      fetchAllPayments();
-    } else {
-      let filteredPayments = [...payments];
-      let filteredUsers = [...allUsers];
-      if (selectedMonth !== "") {
-        fetchAllPayments();
-        filteredPayments = filteredPayments.filter(
-          (payment) => payment.month === selectedMonth
-        );
-      }
+  useEffect(() => {
+    // Create a copy of All Deposits for filtering
+    let filteredPayments = [...payments];
 
-      if (selectedYear !== "") {
-        fetchAllPayments();
-        filteredPayments = filteredPayments.filter(
-          (payment) => payment.year === selectedYear
-        );
-      }
-
-      if (selectedUser !== "") {
-        fetchAllPayments();
-        const filterName = selectedUser.toLowerCase();
-        filteredUsers = filteredUsers.filter((user) => {
-          const userName = user.name.toLowerCase();
-          let matchCount = 0;
-          for (let index = 0; index < filterName.length; index++) {
-            if (userName[index] === filterName[index]) {
-              matchCount++;
-            } else {
-              break; // Exit the loop if a letter doesn't match
-            }
-          }
-          return matchCount === filterName.length; // Include the user if all letters match
-        });
-        if (filteredUsers.length > 0) {
-          filteredPayments = filteredPayments.filter((payment) => {
-            const user = filteredUsers.find(
-              (user) => user.email === payment.email
-            );
-            return user;
-          });
-        } else {
-          fetchAllPayments();
-          return;
-        }
-      }
-
-      if (selectedDepartment !== "") {
-        fetchAllPayments();
-        filteredPayments = filteredPayments.filter((payment) => {
-          const user = allUsers.find((user) => user.email === payment.email);
-          return user && user.department === selectedDepartment;
-        });
-      }
-      setPayments(filteredPayments);
+    if (selectedMonth !== "") {
+      filteredPayments = filteredPayments.filter(
+        (payment) => payment.month === selectedMonth
+      );
     }
+
+    if (selectedYear !== "") {
+      filteredPayments = filteredPayments.filter(
+        (payment) => payment.year === selectedYear
+      );
+    }
+
+    if (selectedUser !== "") {
+      const filterName = selectedUser.toLowerCase();
+      const filteredUsers = allUsers.filter((user) =>
+        user.name.toLowerCase().includes(filterName)
+      );
+
+      if (filteredUsers.length > 0) {
+        const filteredEmails = filteredUsers.map((user) => user.email);
+        filteredPayments = filteredPayments.filter((payment) =>
+          filteredEmails.includes(payment.email)
+        );
+      } else {
+        // No users match, reset the payments
+        filteredPayments = [];
+      }
+    }
+
+    if (selectedDepartment !== "") {
+      filteredPayments = filteredPayments.filter((payment) => {
+        const user = allUsers.find((user) => user.email === payment.email);
+        return user && user.department === selectedDepartment;
+      });
+    }
+
+    setFilteredPayments(filteredPayments);
   }, [
     selectedMonth,
     selectedYear,
@@ -931,24 +1274,7 @@ const AllPaymentContent = () => {
     setSelectedYear("");
     setSelectedUser("");
     setSelectedDepartment("");
-    // Fetch all payments to reset the view
-    const fetchAllPayments = () => {
-      const db = getDatabase(app);
-      const paymentsRef = ref(db, "payments");
-
-      onValue(paymentsRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const paymentsData = snapshot.val();
-          const allPayments = Object.entries(paymentsData)
-            .filter(([_, payment]) => payment.status === "Accepted")
-            .map(([id, payment]) => ({ id, ...payment }));
-          setPayments(allPayments.reverse());
-        } else {
-          setPayments([]);
-        }
-      });
-    };
-    fetchAllPayments();
+    setFilteredPayments(payments);
   };
 
   const getUser = (email) => {
@@ -959,8 +1285,8 @@ const AllPaymentContent = () => {
   const [currentPage, setCurrentPage] = useState(0);
   const perPage = 20; // Number of items per page
   const offset = currentPage * perPage;
-  const paginatedPayments = payments.slice(offset, offset + perPage);
-  const pageCount = Math.ceil(payments.length / perPage);
+  const paginatedPayments = filteredPayments.slice(offset, offset + perPage);
+  const pageCount = Math.ceil(filteredPayments.length / perPage);
 
   const handleDownloadPDF = () => {
     const doc = new jsPDF();
@@ -979,7 +1305,7 @@ const AllPaymentContent = () => {
 
     const generateTableRows = (payments) => {
       const tableRows = [];
-      payments.forEach((payment) => {
+      filteredPayments.forEach((payment) => {
         const user = getUser(payment.email);
         const paymentData = [
           user ? user.name : "",
@@ -1003,13 +1329,13 @@ const AllPaymentContent = () => {
       for (let i = 0; i < totalPages; i++) {
         const start = i * perPage;
         const end = start + perPage;
-        const pagePayments = payments.slice(start, end);
+        const pagePayments = filteredPayments.slice(start, end);
 
         // Add page content
         doc.addImage("jukti.png", "PNG", 10, 8, 33, 19); // Add JUKTI logo on the left
         doc.setFontSize(12);
         doc.text(
-          "Funds Payment Records",
+          "Funds Deposit Records",
           doc.internal.pageSize.getWidth() - 118,
           19,
           { align: "right" }
@@ -1042,12 +1368,12 @@ const AllPaymentContent = () => {
 
     generatePDFPages();
 
-    doc.save(`jukti-funds-payment-records-${new Date().getTime()}.pdf`);
+    doc.save(`jukti-funds-deposit-records-${new Date().getTime()}.pdf`);
   };
 
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
-      <h2 className="text-2xl text-white mb-6">All Payments</h2>
+      <h2 className="text-2xl text-white mb-6">All Deposits</h2>
       <div className="flex flex-wrap justify-between items-center mb-4">
         <div className="flex flex-wrap mb-4">
           <div className="mr-4">
@@ -1060,19 +1386,7 @@ const AllPaymentContent = () => {
               onChange={(e) => setSelectedMonth(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
             >
-              <option value="">All</option>
-              <option value="January">January</option>
-              <option value="February">February</option>
-              <option value="March">March</option>
-              <option value="April">April</option>
-              <option value="May">May</option>
-              <option value="June">June</option>
-              <option value="July">July</option>
-              <option value="August">August</option>
-              <option value="September">September</option>
-              <option value="October">Octobor</option>
-              <option value="November">November</option>
-              <option value="December">December</option>
+              {getMonthOptions()}
             </select>
           </div>
           <div className="mr-4">
@@ -1085,15 +1399,7 @@ const AllPaymentContent = () => {
               onChange={(e) => setSelectedYear(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
             >
-              <option value="">All</option>
-              {Array.from({ length: 6 }).map((_, index) => {
-                const year = new Date().getFullYear() - index;
-                return (
-                  <option key={year} value={year}>
-                    {year}
-                  </option>
-                );
-              })}
+              {getYearOptions()}
             </select>
           </div>
           <div className="mr-4">
@@ -1141,7 +1447,8 @@ const AllPaymentContent = () => {
           >
             Reset Filter
           </button>
-          <button className="flex items-center bg-transparent text-jukti-orange"
+          <button
+            className="flex items-center bg-transparent text-jukti-orange"
             onClick={handleDownloadPDF}
           >
             <FontAwesomeIcon icon={faFilePdf} className="m-2 w-8 h-8" />
@@ -1226,10 +1533,11 @@ const AllPaymentContent = () => {
       {payments.length > perPage && (
         <div class="pagination flex justify-center pt-4">
           <button
-            className={`previous rounded-l py-2 px-4 ${currentPage === 0
-              ? "text-gray-400"
-              : "text-gray-200 hover:text-gray-400"
-              }`}
+            className={`previous rounded-l py-2 px-4 ${
+              currentPage === 0
+                ? "text-gray-400"
+                : "text-gray-200 hover:text-gray-400"
+            }`}
             onClick={() => setCurrentPage(currentPage - 1)}
             disabled={currentPage === 0}
           >
@@ -1253,10 +1561,404 @@ const AllPaymentContent = () => {
               ))}
           </div>
           <button
-            className={`next rounded-r py-2 px-4 ${currentPage === pageCount - 1
-              ? "text-gray-400"
-              : "text-gray-200 hover:text-gray-400"
-              }`}
+            className={`next rounded-r py-2 px-4 ${
+              currentPage === pageCount - 1
+                ? "text-gray-400"
+                : "text-gray-200 hover:text-gray-400"
+            }`}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            disabled={currentPage === pageCount - 1}
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+const AllExpenseContent = () => {
+  const [expenses, setExpenses] = useState([]);
+  const [filteredExpenses, setFilteredExpenses] = useState([]);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [perPage] = useState(10);
+  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedUser, setSelectedUser] = useState("");
+  const [departments, setDepartments] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
+
+  const fetchData = async () => {
+    try {
+      const expensesRef = ref(db, "expenses");
+      const usersRef = ref(db, "users");
+      const departmentsRef = ref(db, "departments");
+
+      const [expensesSnapshot, usersSnapshot, departmentsSnapshot] =
+        await Promise.all([
+          get(expensesRef),
+          get(usersRef),
+          get(departmentsRef),
+        ]);
+
+      if (expensesSnapshot.exists()) {
+        const expensesData = expensesSnapshot.val();
+        const expenses = Object.entries(expensesData)
+          .filter(([_, expense]) => expense.status === "Accepted")
+          .map(([id, expense]) => ({ id, ...expense }));
+        setExpenses(expenses);
+        setFilteredExpenses(expenses);
+      } else {
+        setExpenses([]);
+        setFilteredExpenses([]);
+      }
+
+      if (usersSnapshot.exists()) {
+        const usersData = usersSnapshot.val();
+        const users = Object.entries(usersData).map(([id, user]) => ({
+          id,
+          ...user,
+        }));
+        setAllUsers(users);
+      } else {
+        setAllUsers([]);
+      }
+
+      if (departmentsSnapshot.exists()) {
+        const departmentsData = departmentsSnapshot.val();
+        const departments = Object.entries(departmentsData).map(
+          ([id, department]) => ({ id, ...department })
+        );
+        setDepartments(departments);
+      } else {
+        setDepartments([]);
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    let filteredExpenses = [...expenses];
+
+    if (selectedDepartment !== "") {
+      filteredExpenses = filteredExpenses.filter((expense) => {
+        const user = allUsers.find((user) => user.email === expense.email);
+        return user && user.department === selectedDepartment;
+      });
+    }
+
+    if (selectedUser !== "") {
+      const filterName = selectedUser.toLowerCase();
+      const filteredUsers = allUsers.filter((user) =>
+        user.name.toLowerCase().includes(filterName)
+      );
+
+      if (filteredUsers.length > 0) {
+        const filteredEmails = filteredUsers.map((user) => user.email);
+        filteredExpenses = filteredExpenses.filter((expense) =>
+          filteredEmails.includes(expense.email)
+        );
+      } else {
+        filteredExpenses = [];
+      }
+    }
+
+    setFilteredExpenses(filteredExpenses);
+  }, [selectedDepartment, selectedUser, expenses, allUsers]);
+
+  const getUser = (email) => {
+    const user = allUsers.find((user) => user.email === email);
+    return user ? user : null;
+  };
+
+  const handleResetFilter = () => {
+    setSelectedDepartment("");
+    setSelectedUser("");
+    setFilteredExpenses(expenses);
+  };
+
+  const offset = currentPage * perPage;
+  const paginatedExpenses = filteredExpenses.slice(offset, offset + perPage);
+  const pageCount = Math.ceil(filteredExpenses.length / perPage);
+
+  const handleDownloadPDF = () => {
+    const doc = new jsPDF();
+
+    const tableColumn = [
+      "Name",
+      "Position",
+      "Department",
+      "Date",
+      "Amount",
+      "Title",
+      "Method",
+      "Payment Details",
+      "Trx ID",
+      "File",
+    ];
+
+    const generateTableRows = () => {
+      const tableRows = [];
+      filteredExpenses.forEach((expense) => {
+        const user = getUser(expense.email);
+        const rowData = [
+          user.name,
+          user.position,
+          user.department,
+          expense.date,
+          expense.amount,
+          expense.title,
+          expense.method,
+          expense.paymentDetails,
+          expense.trxId,
+          expense.file,
+        ];
+        tableRows.push(rowData);
+      });
+      return tableRows;
+    };
+
+    const generatePDFPages = () => {
+      const totalPages = Math.ceil(filteredExpenses.length / perPage);
+      const pdfPages = [];
+      for (let i = 0; i < totalPages; i++) {
+        const start = i * perPage;
+        const end = start + perPage;
+        const pageExpenses = filteredExpenses.slice(start, end);
+
+        doc.addImage("jukti.png", "PNG", 10, 8, 33, 19);
+        doc.setFontSize(12);
+        doc.text(
+          "Funds Expense Records",
+          doc.internal.pageSize.getWidth() - 118,
+          19,
+          { align: "right" }
+        ); // Add text aligned to the right
+        doc.text(
+          "Date: " + moment(new Date()).format("MMMM DD YYYY"),
+          doc.internal.pageSize.getWidth() - 10,
+          19,
+          { align: "right" }
+        ); // Add text aligned to the right
+        doc.autoTable(tableColumn, generateTableRows(pageExpenses), {
+          startY: 30,
+        });
+        doc.setFontSize(10);
+        doc.text(
+          `Page ${i + 1} of ${totalPages}`,
+          doc.internal.pageSize.getWidth() - 10,
+          doc.internal.pageSize.getHeight() - 10,
+          {
+            align: "right",
+          }
+        ); // Add page number at the bottom
+
+        // Add new page if not the last page
+        if (i !== totalPages - 1) {
+          doc.addPage();
+        }
+      }
+    };
+
+    generatePDFPages();
+
+    doc.save(`jukti-funds-expense-records-${new Date().getTime()}.pdf`);
+  };
+
+  return (
+    <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
+      <h2 className="text-2xl text-white mb-6">All Expenses</h2>
+      <div className="flex flex-wrap justify-between items-center mb-4">
+        <div className="flex flex-wrap mb-4">
+          <div className="mr-4">
+            <label htmlFor="department" className="block text-white">
+              Department:
+            </label>
+            <select
+              id="department"
+              value={selectedDepartment}
+              onChange={(e) => setSelectedDepartment(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+            >
+              <option value="">All</option>
+              {departments.map((department) => (
+                <option key={department.id} value={department.name}>
+                  {department.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mr-4">
+            <label htmlFor="user" className="block text-white">
+              User:
+            </label>
+            <input
+              type="text"
+              id="user"
+              value={selectedUser}
+              onChange={(e) => setSelectedUser(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+              placeholder="Search user..."
+              list="user-suggestions"
+            />
+            <datalist id="user-suggestions">
+              {allUsers.map((user) => (
+                <option key={user.id} value={user.name} />
+              ))}
+            </datalist>
+          </div>
+        </div>
+        <div className="mb-4 flex justify-between">
+          <button
+            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none mr-2"
+            onClick={handleResetFilter}
+          >
+            Reset Filter
+          </button>
+          <button
+            className="flex items-center bg-transparent text-jukti-orange"
+            onClick={handleDownloadPDF}
+          >
+            <FontAwesomeIcon icon={faFilePdf} className="m-2 w-8 h-8" />
+            <span>Download PDF</span>
+          </button>
+        </div>
+      </div>
+      {paginatedExpenses.length > 0 ? (
+        <div className="overflow-x-auto bg-gray-800 p-2 rounded-xl">
+          <div className="w-full">
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    Name
+                  </th>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    Position
+                  </th>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    Department
+                  </th>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    Date
+                  </th>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    Amount
+                  </th>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    Title
+                  </th>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    Details
+                  </th>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    Method
+                  </th>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    Payment Details
+                  </th>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    Trx ID
+                  </th>
+                  <th className="text-gray-300 text-left py-2 px-2 border-b">
+                    File
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredExpenses.map((expense) => (
+                  <tr key={expense.id}>
+                    <td className="text-white py-2 px-2 border-b">
+                      {getUser(expense.email)?.name}
+                    </td>
+                    <td className="text-white py-2 px-2 border-b">
+                      {getUser(expense.email)?.position}
+                    </td>
+                    <td className="text-white py-2 px-2 border-b">
+                      {getUser(expense.email)?.department}
+                    </td>
+                    <td className="text-white py-2 px-2 border-b">
+                      {expense.date}
+                    </td>
+                    <td className="text-white py-2 px-2 border-b">
+                      {expense.amount}
+                    </td>
+                    <td className="text-white py-2 px-2 border-b">
+                      {expense.title}
+                    </td>
+                    <td className="text-white py-2 px-2 border-b">
+                      {expense.details}
+                    </td>
+                    <td className="text-white py-2 px-2 border-b">
+                      {expense.paymentMethod}
+                    </td>
+                    <td className="text-white py-2 px-2 border-b">
+                      {expense.paymentMethodDetails}
+                    </td>
+                    <td className="text-white py-2 px-2 border-b">
+                      {expense.transactionId}
+                    </td>
+                    <td className="text-white py-2 px-2 border-b">
+                      <Link
+                        href={expense.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:text-blue-400"
+                      >
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-gray-800 p-4 rounded-xl">
+          <p className="text-white">No expenses found.</p>
+        </div>
+      )}
+      {filteredExpenses.length > perPage && (
+        <div class="pagination flex justify-center pt-4">
+          <button
+            className={`previous rounded-l py-2 px-4 ${
+              currentPage === 0
+                ? "text-gray-400"
+                : "text-gray-200 hover:text-gray-400"
+            }`}
+            onClick={() => setCurrentPage(currentPage - 1)}
+            disabled={currentPage === 0}
+          >
+            Previous
+          </button>
+          <div class="page-numbers flex flex-wrap">
+            {Array(pageCount)
+              .fill(0)
+              .map((_, page) => (
+                <button
+                  key={page}
+                  class={
+                    page === currentPage
+                      ? "bg-blue-500 text-white py-2 px-4 rounded"
+                      : "text-gray-200 py-2 px-4 rounded"
+                  }
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page + 1}
+                </button>
+              ))}
+          </div>
+          <button
+            className={`next rounded-r py-2 px-4 ${
+              currentPage === pageCount - 1
+                ? "text-gray-400"
+                : "text-gray-200 hover:text-gray-400"
+            }`}
             onClick={() => setCurrentPage(currentPage + 1)}
             disabled={currentPage === pageCount - 1}
           >
@@ -1269,31 +1971,51 @@ const AllPaymentContent = () => {
 };
 
 const PaymentHistoryContent = () => {
-  const [pendingPayments, setPendingPayments] = useState([]);
+  const [deposits, setDeposits] = useState([]);
+  const [expenses, setExpenses] = useState([]);
+
+  const expensesRef = ref(db, "expenses");
+  const depositsRef = ref(db, "payments");
 
   useEffect(() => {
-    const db = getDatabase(app);
-    const paymentsRef = ref(db, "payments");
-    const auth = getAuth(app);
-
-    const fetchPendingPayments = (snapshot) => {
-      if (snapshot.exists()) {
-        const paymentsData = snapshot.val();
-        const pendingPayments = Object.entries(paymentsData)
-          .filter(([_, payment]) => payment.email === jsCookie.get("userEmail"))
-          .map(([id, payment]) => ({ id, ...payment }));
-        setPendingPayments(pendingPayments);
-      } else {
-        setPendingPayments([]);
-      }
-    };
-
-    const listener = onValue(paymentsRef, fetchPendingPayments);
-
+    const expenseListener = onValue(expensesRef, fetchExpenses);
     return () => {
-      off(paymentsRef, "value", listener);
+      off(expensesRef, "value", expenseListener);
     };
   }, []);
+
+  const fetchExpenses = (snapshot) => {
+    if (snapshot.exists()) {
+      const expensesList = snapshot.val();
+      const expenses = Object.keys(expensesList)
+        .filter((key) => expensesList[key].email === jsCookie.get("userEmail"))
+        .map((key) => ({
+          id: key,
+          ...expensesList[key],
+        }));
+      setExpenses(expenses);
+    }
+  };
+
+  useEffect(() => {
+    const depositListener = onValue(depositsRef, fetchDeposits);
+    return () => {
+      off(depositsRef, "value", depositListener);
+    };
+  }, []);
+
+  const fetchDeposits = (snapshot) => {
+    if (snapshot.exists()) {
+      const depositsList = snapshot.val();
+      const deposits = Object.keys(depositsList)
+        .filter((key) => depositsList[key].email === jsCookie.get("userEmail"))
+        .map((key) => ({
+          id: key,
+          ...depositsList[key],
+        }));
+      setDeposits(deposits);
+    }
+  };
 
   const getStatusButton = (payment) => {
     if (payment.status === "Pending") {
@@ -1304,9 +2026,9 @@ const PaymentHistoryContent = () => {
       );
     } else if (payment.status === "Accepted") {
       return (
-        <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline">
-          Accepted
-        </button>
+          <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline">
+            Accepted
+          </button>
       );
     } else if (payment.status === "Rejected") {
       return (
@@ -1315,125 +2037,210 @@ const PaymentHistoryContent = () => {
         </button>
       );
     }
-
     return null;
   };
-
-  // Define the starting and ending indexes based on the current page and perPage value
-  const [currentPage, setCurrentPage] = useState(0);
-  const perPage = 20; // Number of items per page
-  const startIndex = currentPage * perPage;
-  const endIndex = startIndex + perPage;
-  const paginatedPayments = pendingPayments.slice(startIndex, endIndex);
 
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
       <h2 className="text-2xl text-white mb-6">Payment History</h2>
-      {paginatedPayments.length > 0 ? (
-        <div className="overflow-x-auto bg-gray-800 p-2 rounded-xl">
-          <div className="w-full">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="text-gray-300 text-left py-2 px-2 border-b">
-                    Method
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-2 border-b">
-                    Month
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-2 border-b">
-                    Year
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-2 border-b">
-                    Number
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-2 border-b">
-                    Trx ID
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-2 border-b">
-                    Amount
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-2 border-b">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedPayments.map((payment) => (
-                  <tr key={payment.id}>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.paymentMethod}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.month}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.year}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.number}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.transactionId}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {payment.amount}
-                    </td>
-                    <td className="text-white py-2 px-2 border-b">
-                      {getStatusButton(payment)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : (
-        <p className="text-white">No pending payments found.</p>
-      )}
-      {/* Pagination */}
-      {pendingPayments.length > perPage && (
-        <div className="flex justify-center pt-4">
-          <button
-            className={`previous rounded-l py-2 px-4 ${currentPage === 0
-              ? "text-gray-400"
-              : "text-gray-200 hover:text-gray-400"
-              }`}
-            onClick={() => setCurrentPage(currentPage - 1)}
-            disabled={currentPage === 0}
-          >
-            Previous
-          </button>
-          <div className="page-numbers flex flex-wrap">
-            {Array(Math.ceil(pendingPayments.length / perPage))
-              .fill(0)
-              .map((_, page) => (
-                <button
-                  key={page}
-                  className={`${page === currentPage
-                    ? "bg-blue-500 text-white"
-                    : "text-gray-200 hover:text-gray-400"
-                    } py-2 px-4 rounded`}
-                  onClick={() => setCurrentPage(page)}
-                >
-                  {page + 1}
-                </button>
-              ))}
-          </div>
-          <button
-            className={`next rounded-r py-2 px-4 ${currentPage === Math.ceil(pendingPayments.length / perPage) - 1
-              ? "text-gray-400"
-              : "text-gray-200 hover:text-gray-400"
-              }`}
-            onClick={() => setCurrentPage(currentPage + 1)}
-            disabled={
-              currentPage === Math.ceil(pendingPayments.length / perPage) - 1
-            }
-          >
-            Next
-          </button>
-        </div>
-      )}
+      {/* Deposit Section */}
+      <Disclosure>
+        {({ open }) => (
+          <>
+            <Disclosure.Button className="flex items-center justify-between w-full bg-gray-800 text-white py-2 px-4 rounded-lg focus:outline-none">
+              <span className="text-xl">Deposits</span>
+              <ChevronDownIcon
+                className={`${
+                  open ? "transform rotate-180" : ""
+                } w-5 h-5 text-white`}
+              />
+            </Disclosure.Button>
+            <Transition
+              show={open}
+              enter="transition duration-100 ease-out"
+              enterFrom="transform scale-95 opacity-0"
+              enterTo="transform scale-100 opacity-100"
+              leave="transition duration-75 ease-out"
+              leaveFrom="transform scale-100 opacity-100"
+              leaveTo="transform scale-95 opacity-0"
+            >
+              <Disclosure.Panel className="bg-gray-800 p-2 rounded-xl mt-2">
+                {deposits.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Month
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Year
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Method
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Number
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Transaction ID
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Amount
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* Render deposit payments */}
+                        {deposits.map((deposit) => (
+                          <tr key={deposit.id}>
+                            <td className="text-white py-2 px-2 border-b">
+                              {deposit.month}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {deposit.year}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {deposit.paymentMethod}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {deposit.number}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {deposit.transactionId}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {deposit.amount}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {getStatusButton(deposit)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-white">No pending deposits found.</p>
+                )}
+              </Disclosure.Panel>
+            </Transition>
+          </>
+        )}
+      </Disclosure>
+
+      {/* Expense Section */}
+      <Disclosure>
+        {({ open }) => (
+          <>
+            <Disclosure.Button className="flex items-center justify-between w-full bg-gray-800 text-white py-2 px-4 rounded-lg mt-4 focus:outline-none">
+              <span className="text-xl">Expenses</span>
+              <ChevronDownIcon
+                className={`${
+                  open ? "transform rotate-180" : ""
+                } w-5 h-5 text-white`}
+              />
+            </Disclosure.Button>
+            <Transition
+              show={open}
+              enter="transition duration-100 ease-out"
+              enterFrom="transform scale-95 opacity-0"
+              enterTo="transform scale-100 opacity-100"
+              leave="transition duration-75 ease-out"
+              leaveFrom="transform scale-100 opacity-100"
+              leaveTo="transform scale-95 opacity-0"
+            >
+              <Disclosure.Panel className="bg-gray-800 p-2 rounded-xl mt-2">
+                {expenses.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Date
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Title
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Details
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Method
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Amount
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            File
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Trx ID
+                          </th>
+                          <th className="text-gray-300 text-left py-2 px-2 border-b">
+                            Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* Render expense payments */}
+                        {expenses.map((expense) => (
+                          <tr key={expense.id}>
+                            <td className="text-white py-2 px-2 border-b">
+                              {expense.date}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {expense.title}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              <div
+                                className="formatted-text text-white"
+                                style={{ whiteSpace: "pre-wrap" }}
+                                dangerouslySetInnerHTML={{
+                                  __html: expense.details,
+                                }}
+                              ></div>
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {expense.paymentMethod}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {expense.amount}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {expense.fileUrl ? (
+                                <Link
+                                  href={expense.fileUrl}
+                                  className="text-blue-500 hover:text-blue-700"
+                                >
+                                  View
+                                </Link>
+                              ) : (
+                                "No file"
+                              )}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {expense.transactionId}
+                            </td>
+                            <td className="text-white py-2 px-2 border-b">
+                              {getStatusButton(expense)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="text-white">No pending expenses found.</p>
+                )}
+              </Disclosure.Panel>
+            </Transition>
+          </>
+        )}
+      </Disclosure>
     </div>
   );
 };
@@ -1450,9 +2257,6 @@ const ProfileContent = () => {
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  const auth = getAuth(app);
-  const db = getDatabase(app);
 
   useEffect(() => {
     const fetchUser = (email) => {
@@ -1652,10 +2456,10 @@ const SettingsContent = () => {
   const [newPositionHierarchy, setNewPositionHierarchy] = useState(1);
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [newPaymentMethod, setNewPaymentMethod] = useState("");
-  const [newPaymentMethodDescription, setNewPaymentMethodDescription] = useState("");
+  const [newPaymentMethodDescription, setNewPaymentMethodDescription] =
+    useState("");
 
   useEffect(() => {
-    const db = getDatabase(app);
     const departmentsRef = ref(db, "departments");
     const paymentMethodsRef = ref(db, "paymentMethods");
 
@@ -1705,7 +2509,6 @@ const SettingsContent = () => {
 
   const handleAddDepartment = () => {
     if (newDepartment.trim() !== "") {
-      const db = getDatabase(app);
       const departmentsRef = ref(db, "departments");
       const newDepartmentRef = push(departmentsRef);
       set(newDepartmentRef, {
@@ -1718,7 +2521,6 @@ const SettingsContent = () => {
 
   const handleAddPosition = (departmentId) => {
     if (newPosition.trim() !== "") {
-      const db = getDatabase(app);
       const positionsRef = ref(db, `departments/${departmentId}/positions`);
       const newPositionRef = push(positionsRef);
       set(newPositionRef, {
@@ -1731,8 +2533,10 @@ const SettingsContent = () => {
   };
 
   const handleAddPaymentMethod = () => {
-    if (newPaymentMethod.trim() !== "" && newPaymentMethodDescription.trim() !== "") {
-      const db = getDatabase(app);
+    if (
+      newPaymentMethod.trim() !== "" &&
+      newPaymentMethodDescription.trim() !== ""
+    ) {
       const paymentMethodsRef = ref(db, "paymentMethods");
       const newPaymentMethodRef = push(paymentMethodsRef);
       set(newPaymentMethodRef, {
@@ -1745,223 +2549,280 @@ const SettingsContent = () => {
   };
 
   const handleDeleteDepartment = (departmentId) => {
-    const db = getDatabase(app);
     const departmentRef = ref(db, `departments/${departmentId}`);
     remove(departmentRef);
   };
 
   const handleDeletePosition = (departmentId, positionId) => {
-    const db = getDatabase(app);
-    const positionRef = ref(db, `departments/${departmentId}/positions/${positionId}`);
+    const positionRef = ref(
+      db,
+      `departments/${departmentId}/positions/${positionId}`
+    );
     remove(positionRef);
   };
 
   const handleDeletePaymentMethod = (paymentMethodId) => {
-    const db = getDatabase(app);
     const paymentMethodRef = ref(db, `paymentMethods/${paymentMethodId}`);
     remove(paymentMethodRef);
   };
 
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
-      <h2 className="text-2xl text-white">Settings</h2>
+      <h2 className="text-2xl text-white pb-4">Settings</h2>
+      <div className="grid grid-cols-1 gap-4">
+        {/* Departments */}
+        <Disclosure>
+          {({ open }) => (
+            <>
+              <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                <h3 className="text-xl text-gray-300">Departments</h3>
+                {open ? (
+                  <ChevronUpIcon className="w-5 h-5 text-white" />
+                ) : (
+                  <ChevronDownIcon className="w-5 h-5 text-white" />
+                )}
+              </Disclosure.Button>
+              <Transition
+                enter="transition duration-200 ease-out"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="transition duration-150 ease-out"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <Disclosure.Panel className="pb-4 px-4 rounded-lg">
+                  <div className="flex flex-col">
+                    {/* Department items */}
+                    {departments.map((department) => (
+                      <Disclosure key={department.id}>
+                        {({ open }) => (
+                          <>
+                            <div className="flex items-center justify-between py-2">
+                              <Disclosure.Button className="flex justify-between w-full px-4 mr-2 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                                <h4 className="text-lg text-white font-bold">
+                                  {department.name}
+                                </h4>
+                                {open ? (
+                                  <ChevronUpIcon className="w-5 h-5 text-white" />
+                                ) : (
+                                  <ChevronDownIcon className="w-5 h-5 text-white" />
+                                )}
+                              </Disclosure.Button>
 
-      {/* Departments */}
-      <Disclosure>
-        {({ open }) => (
-          <>
-            <Disclosure.Button className="flex items-center justify-between w-full mt-8">
-              <h3 className="text-xl text-gray-300 mb-4">Departments</h3>
-              {open ? (<ChevronUpIcon className="w-5 h-5 text-white" />)
-                : (<ChevronDownIcon className="w-5 h-5 text-white" />)
-              }
-            </Disclosure.Button>
-
-            <Disclosure.Panel className="">
-              <div className="flex flex-col">
-                {/* Department items */}
-                {departments.map((department) => (
-                  <Disclosure key={department.id}>
-                    {({ open }) => (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <Disclosure.Button className="flex items-center justify-between py-2">
-                            <h4 className="text-lg text-white font-bold">{department.name}</h4>
-                            {open ? (<ChevronUpIcon className="w-5 h-5 text-white" />)
-                              : (<ChevronDownIcon className="w-5 h-5 text-white" />)
-                            }
-                          </Disclosure.Button>
-                          <button
-                            className="text-red-500"
-                            onClick={() => handleDeleteDepartment(department.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-
-                        <Disclosure.Panel className="pl-4 mt-2">
-                          {/* Positions */}
-                          <ul className="mb-4">
-                            {department.positions.map((position) => (
-                              <li key={position.id} className="flex items-center justify-between py-2">
-                                <span className="text-white">{position.name} - {position.hierarchy}</span>
-                                <button
-                                  className="text-red-500"
-                                  onClick={() => handleDeletePosition(department.id, position.id)}
-                                >
-                                  Delete
-                                </button>
-                              </li>
-                            ))}
-                          </ul>
-
-                          {/* Add new position */}
-                          <div className="flex items-center">
-                            <input
-                              type="text"
-                              placeholder="New Position"
-                              value={newPosition}
-                              onChange={(e) => setNewPosition(e.target.value)}
-                              className="border border-gray-300 rounded-md px-3 py-2 mr-2"
-                            />
-                            <input
-                              type="number"
-                              placeholder="Hierarchy"
-                              value={newPositionHierarchy}
-                              onChange={(e) => setNewPositionHierarchy(parseInt(e.target.value))}
-                              className="border border-gray-300 rounded-md px-3 py-2 mr-2"
-                            />
-                            <button
-                              className="bg-jukti-orange text-white px-4 py-2 rounded-md"
-                              onClick={() => handleAddPosition(department.id)}
-                            >
-                              Add
-                            </button>
-                          </div>
-                        </Disclosure.Panel>
-                      </>
-                    )}
-                  </Disclosure>
-                ))}
-
-                {/* Add new department */}
-                <div className="flex items-center">
-                  <input
-                    type="text"
-                    placeholder="New Department"
-                    value={newDepartment}
-                    onChange={(e) => setNewDepartment(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 mr-2"
-                  />
-                  <button
-                    className="bg-jukti-orange text-white px-4 py-2 rounded-md"
-                    onClick={handleAddDepartment}
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-            </Disclosure.Panel>
-          </>
-        )}
-      </Disclosure>
-
-      {/* Payment Methods */}
-      <Disclosure>
-        {({ open }) => (
-          <>
-            <Disclosure.Button className="flex items-center justify-between mt-8">
-              <h3 className="text-xl text-gray-300 mb-4">Payment Methods</h3>
-              {open ? (<ChevronUpIcon className="w-5 h-5 text-white" />)
-                : (<ChevronDownIcon className="w-5 h-5 text-white" />)
-              }
-            </Disclosure.Button>
-
-            <Disclosure.Panel className="mt-4">
-              <div className="flex flex-col">
-                {/* Payment method items */}
-                {paymentMethods.map((paymentMethod) => (
-                  <Disclosure key={paymentMethod.id}>
-                    {({ open }) => (
-                      <>
-                      <div className="flex items-center justify-between">
-                        <Disclosure.Button className="flex items-center justify-between py-2">
-                          <span className="text-white font-bold text-xl">{paymentMethod.name}</span>
-                          {open ? (<ChevronUpIcon className="w-5 h-5 text-white" />)
-                            : (<ChevronDownIcon className="w-5 h-5 text-white" />)
-                          }
-                        </Disclosure.Button>
-                        <button
-                          className="text-red-500"
-                          onClick={() => handleDeletePaymentMethod(paymentMethod.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-
-                        <Disclosure.Panel className="pl-4 mt-2">
-                          {/* Payment method description */}
-                          <div>
-                            <div className="flex items-center justify-between">
-                              <span className="text-white font-bold text-xl">{paymentMethod.name}</span>
                               <button
                                 className="text-red-500"
-                                onClick={() => handleDeletePaymentMethod(paymentMethod.id)}
+                                onClick={() =>
+                                  handleDeleteDepartment(department.id)
+                                }
                               >
                                 Delete
                               </button>
                             </div>
-                            <div
-                              className="formatted-text text-white"
-                              style={{ whiteSpace: 'pre-wrap' }}
-                              dangerouslySetInnerHTML={{
-                                __html: paymentMethod.description,
-                              }}
-                            ></div>
-                          </div>
-                        </Disclosure.Panel>
-                      </>
-                    )}
-                  </Disclosure>
-                ))}
+                            <Transition
+                              enter="transition duration-200 ease-out"
+                              enterFrom="opacity-0"
+                              enterTo="opacity-100"
+                              leave="transition duration-150 ease-out"
+                              leaveFrom="opacity-100"
+                              leaveTo="opacity-0"
+                            >
+                              <Disclosure.Panel className="pl-4 my-2">
+                                {/* Positions */}
+                                <ul className="mb-4">
+                                  {department.positions.map((position) => (
+                                    <li
+                                      key={position.id}
+                                      className="flex items-center justify-between py-2"
+                                    >
+                                      <span className="text-white">
+                                        {position.name} - {position.hierarchy}
+                                      </span>
+                                      <button
+                                        className="text-red-500"
+                                        onClick={() =>
+                                          handleDeletePosition(
+                                            department.id,
+                                            position.id
+                                          )
+                                        }
+                                      >
+                                        Delete
+                                      </button>
+                                    </li>
+                                  ))}
+                                </ul>
 
-                {/* Add new payment method */}
-                <div className="flex items-center">
-                  <input
-                    type="text"
-                    placeholder="New Payment Method"
-                    value={newPaymentMethod}
-                    onChange={(e) => setNewPaymentMethod(e.target.value)}
-                    className="border border-gray-300 rounded-md px-3 py-2 mr-2"
-                  />
-                  <button
-                    className="bg-jukti-orange text-white px-4 py-2 rounded-md"
-                    onClick={handleAddPaymentMethod}
-                  >
-                    Add
-                  </button>
-                </div>
-                <textarea
-                  placeholder="Description"
-                  value={newPaymentMethodDescription}
-                  onChange={(e) => setNewPaymentMethodDescription(e.target.value)}
-                  className="border border-gray-300 rounded-md px-3 py-2 mr-2 my-2 w-full h-auto"
-                />
-              </div>
-            </Disclosure.Panel>
-          </>
-        )}
-      </Disclosure>
+                                {/* Add new position */}
+                                <div className="flex items-center">
+                                  <input
+                                    type="text"
+                                    placeholder="New Position"
+                                    value={newPosition}
+                                    onChange={(e) =>
+                                      setNewPosition(e.target.value)
+                                    }
+                                    className="border border-gray-300 rounded-md px-3 py-2 mr-2"
+                                  />
+                                  <input
+                                    type="number"
+                                    placeholder="Hierarchy"
+                                    value={newPositionHierarchy}
+                                    onChange={(e) =>
+                                      setNewPositionHierarchy(
+                                        parseInt(e.target.value)
+                                      )
+                                    }
+                                    className="border border-gray-300 rounded-md px-3 py-2 mr-2"
+                                  />
+                                  <button
+                                    className="bg-jukti-orange text-white px-4 py-2 rounded-md"
+                                    onClick={() =>
+                                      handleAddPosition(department.id)
+                                    }
+                                  >
+                                    Add
+                                  </button>
+                                </div>
+                              </Disclosure.Panel>
+                            </Transition>
+                          </>
+                        )}
+                      </Disclosure>
+                    ))}
+
+                    {/* Add new department */}
+                    <div className="flex items-center pt-4">
+                      <input
+                        type="text"
+                        placeholder="New Department"
+                        value={newDepartment}
+                        onChange={(e) => setNewDepartment(e.target.value)}
+                        className="border border-gray-300 rounded-md px-3 py-2 mr-2"
+                      />
+                      <button
+                        className="bg-jukti-orange text-white px-4 py-2 rounded-md"
+                        onClick={handleAddDepartment}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                </Disclosure.Panel>
+              </Transition>
+            </>
+          )}
+        </Disclosure>
+
+        {/* Payment Methods */}
+        <Disclosure>
+          {({ open }) => (
+            <>
+              <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                <h3 className="text-xl text-gray-300">Payment Methods</h3>
+                {open ? (
+                  <ChevronUpIcon className="w-5 h-5 text-white" />
+                ) : (
+                  <ChevronDownIcon className="w-5 h-5 text-white" />
+                )}
+              </Disclosure.Button>
+              <Transition
+                enter="transition duration-200 ease-out"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="transition duration-150 ease-out"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <Disclosure.Panel className="pb-4 px-4">
+                  <div className="flex flex-col">
+                    {/* Payment method items */}
+                    {paymentMethods.map((paymentMethod) => (
+                      <Disclosure key={paymentMethod.id}>
+                        {({ open }) => (
+                          <>
+                            <div className="flex items-center justify-between py-2">
+                              <Disclosure.Button className="flex justify-between w-full px-4 mr-2 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                                <h4 className="text-lg text-white font-bold">
+                                  {paymentMethod.name}
+                                </h4>
+
+                                {open ? (
+                                  <ChevronUpIcon className="w-5 h-5 text-white" />
+                                ) : (
+                                  <ChevronDownIcon className="w-5 h-5 text-white" />
+                                )}
+                              </Disclosure.Button>
+                              <button
+                                className="text-red-500"
+                                onClick={() =>
+                                  handleDeletePaymentMethod(paymentMethod.id)
+                                }
+                              >
+                                Delete
+                              </button>
+                            </div>
+                            <Transition
+                              enter="transition duration-200 ease-out"
+                              enterFrom="opacity-0"
+                              enterTo="opacity-100"
+                              leave="transition duration-150 ease-out"
+                              leaveFrom="opacity-100"
+                              leaveTo="opacity-0"
+                            >
+                              <Disclosure.Panel className="pl-4 mt-2">
+                                <div
+                                  className="formatted-text text-white"
+                                  style={{ whiteSpace: "pre-wrap" }}
+                                  dangerouslySetInnerHTML={{
+                                    __html: paymentMethod.description,
+                                  }}
+                                ></div>
+                              </Disclosure.Panel>
+                            </Transition>
+                          </>
+                        )}
+                      </Disclosure>
+                    ))}
+
+                    {/* Add new payment method */}
+                    <div className="flex items-center pt-4">
+                      <input
+                        type="text"
+                        placeholder="New Payment Method"
+                        value={newPaymentMethod}
+                        onChange={(e) => setNewPaymentMethod(e.target.value)}
+                        className="border border-gray-300 rounded-md px-3 py-2 mr-2"
+                      />
+                      <button
+                        className="bg-jukti-orange text-white px-4 py-2 rounded-md"
+                        onClick={handleAddPaymentMethod}
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <textarea
+                      placeholder="Description"
+                      value={newPaymentMethodDescription}
+                      onChange={(e) =>
+                        setNewPaymentMethodDescription(e.target.value)
+                      }
+                      className="border border-gray-300 rounded-md px-3 py-2 mr-2 my-2 w-full h-auto"
+                    />
+                  </div>
+                </Disclosure.Panel>
+              </Transition>
+            </>
+          )}
+        </Disclosure>
+      </div>
     </div>
   );
 };
-
 
 const UsersContent = ({ isAdmin }) => {
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
-    const db = getDatabase(app);
     const usersRef = ref(db, "users");
 
     const getUsers = () => {
@@ -1991,8 +2852,6 @@ const UsersContent = ({ isAdmin }) => {
   }, []);
 
   const handleAdminCheckboxChange = (uid, checked) => {
-    // Update the isAdmin status of the user in the database
-    const db = getDatabase(app);
     const userRef = ref(db, `users/${uid}/isAdmin`);
 
     set(userRef, checked);
@@ -2042,11 +2901,11 @@ const UsersContent = ({ isAdmin }) => {
 
       groupedUsers[department].sort((a, b) => a.priority - b.priority);
     } else {
-      groupedUsers[department].sort((a, b) => a.position.localeCompare(b.position));
+      groupedUsers[department].sort((a, b) =>
+        a.position.localeCompare(b.position)
+      );
     }
   });
-
-
 
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
@@ -2058,53 +2917,88 @@ const UsersContent = ({ isAdmin }) => {
               <>
                 <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
                   <span>{department}</span>
-                  {open ? (<ChevronUpIcon className="w-5 h-5 text-white" />)
-                    : (<ChevronDownIcon className="w-5 h-5 text-white" />)
-                  }
+                  {open ? (
+                    <ChevronUpIcon className="w-5 h-5 text-white" />
+                  ) : (
+                    <ChevronDownIcon className="w-5 h-5 text-white" />
+                  )}
                 </Disclosure.Button>
-                <Disclosure.Panel className="pt-4 pb-2 text-sm text-white">
-                  <div className="overflow-x-auto bg-gray-800 rounded-xl">
-                    <div className="w-full">
-                      <table className="w-full">
-                        <thead>
-                          <tr>
-                            <th className="text-gray-300 text-left py-2 px-4 border-b">Name</th>
-                            <th className="text-gray-300 text-left py-2 px-4 border-b">Position</th>
-                            <th className="text-gray-300 text-left py-2 px-4 border-b">Department</th>
-                            <th className="text-gray-300 text-left py-2 px-4 border-b">Email</th>
-                            <th className="text-gray-300 text-left py-2 px-4 border-b">Contact</th>
-                            {isAdmin && <th className="text-gray-300 text-left py-2 px-4 border-b">Admin</th>}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {departmentUsers.map((user) => (
-                            <tr key={user.uid}>
-                              <td className="text-white py-2 px-4 border-b">{user.name}</td>
-                              <td className="text-white py-2 px-4 border-b">{user.position}</td>
-                              <td className="text-white py-2 px-4 border-b">{user.department}</td>
-                              <td className="text-white py-2 px-4 border-b">{user.email}</td>
-                              <td className="text-white py-2 px-4 border-b">{user.contact}</td>
+                <Transition
+                  enter="transition duration-200 ease-out"
+                  enterFrom="opacity-0"
+                  enterTo="opacity-100"
+                  leave="transition duration-150 ease-out"
+                  leaveFrom="opacity-100"
+                  leaveTo="opacity-0"
+                >
+                  <Disclosure.Panel className="pt-4 pb-2 text-sm text-white">
+                    <div className="overflow-x-auto bg-gray-800 rounded-xl">
+                      <div className="w-full">
+                        <table className="w-full">
+                          <thead>
+                            <tr>
+                              <th className="text-gray-300 text-left py-2 px-4 border-b">
+                                Name
+                              </th>
+                              <th className="text-gray-300 text-left py-2 px-4 border-b">
+                                Position
+                              </th>
+                              <th className="text-gray-300 text-left py-2 px-4 border-b">
+                                Department
+                              </th>
+                              <th className="text-gray-300 text-left py-2 px-4 border-b">
+                                Email
+                              </th>
+                              <th className="text-gray-300 text-left py-2 px-4 border-b">
+                                Contact
+                              </th>
                               {isAdmin && (
-                                <td className="text-white text-center py-2 px-4 border-b">
-                                  <input
-                                    type="checkbox"
-                                    checked={user.isAdmin}
-                                    onChange={(e) =>
-                                      handleAdminCheckboxChange(
-                                        user.uid,
-                                        e.target.checked
-                                      )
-                                    }
-                                  />
-                                </td>
+                                <th className="text-gray-300 text-left py-2 px-4 border-b">
+                                  Admin
+                                </th>
                               )}
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody>
+                            {departmentUsers.map((user) => (
+                              <tr key={user.uid}>
+                                <td className="text-white py-2 px-4 border-b">
+                                  {user.name}
+                                </td>
+                                <td className="text-white py-2 px-4 border-b">
+                                  {user.position}
+                                </td>
+                                <td className="text-white py-2 px-4 border-b">
+                                  {user.department}
+                                </td>
+                                <td className="text-white py-2 px-4 border-b">
+                                  {user.email}
+                                </td>
+                                <td className="text-white py-2 px-4 border-b">
+                                  {user.contact}
+                                </td>
+                                {isAdmin && (
+                                  <td className="text-white text-center py-2 px-4 border-b">
+                                    <input
+                                      type="checkbox"
+                                      checked={user.isAdmin}
+                                      onChange={(e) =>
+                                        handleAdminCheckboxChange(
+                                          user.uid,
+                                          e.target.checked
+                                        )
+                                      }
+                                    />
+                                  </td>
+                                )}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                </Disclosure.Panel>
+                  </Disclosure.Panel>
+                </Transition>
               </>
             )}
           </Disclosure>
@@ -2114,11 +3008,14 @@ const UsersContent = ({ isAdmin }) => {
   );
 };
 
-const ReportsContent = ({ currentUserName }) => {
+const ReportsContent = ({ currentUserName, currentUserPosition }) => {
   const currentDate = new Date();
-  const [monthlySummary, setMonthlySummary] = useState({});
-  const [selectedMonth, setSelectedMonth] = useState("");
-  const [selectedYear, setSelectedYear] = useState("");
+  const [monthlyDeposit, setMonthlyDeposit] = useState({});
+  const [monthlyExpense, setMonthlyExpense] = useState({});
+  const [selectedDepositMonth, setSelectedDepositMonth] = useState("");
+  const [selectedDepositYear, setSelectedDepositYear] = useState("");
+  const [selectedExpenseMonth, setSelectedExpenseMonth] = useState("");
+  const [selectedExpenseYear, setSelectedExpenseYear] = useState("");
   const [defaulters, setDefaulters] = useState({});
   const [selectedDefaulterMonth, setSelectedDefaulterMonth] = useState(
     currentDate.toLocaleString("default", { month: "long" })
@@ -2126,10 +3023,28 @@ const ReportsContent = ({ currentUserName }) => {
   const [selectedDefaulterYear, setSelectedDefaulterYear] = useState(
     currentDate.getFullYear().toString()
   );
+  const [allPaymentMethods, setAllPaymentMethods] = useState([]);
+
+  useEffect(() => {
+    const fetchPaymentMethods = () => {
+      const paymentMethodsRef = ref(db, "paymentMethods");
+
+      onValue(paymentMethodsRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const paymentMethodsData = snapshot.val();
+          const paymentMethods = Object.values(paymentMethodsData);
+          setAllPaymentMethods(paymentMethods);
+        } else {
+          setAllPaymentMethods([]);
+        }
+      });
+    };
+
+    fetchPaymentMethods();
+  }, []);
 
   useEffect(() => {
     const fetchPaymentData = () => {
-      const db = getDatabase(app);
       const paymentsRef = ref(db, "payments");
 
       onValue(paymentsRef, (snapshot) => {
@@ -2137,49 +3052,72 @@ const ReportsContent = ({ currentUserName }) => {
           const paymentData = snapshot.val();
           const payments = Object.values(paymentData);
           const defaulterPayments = Object.values(paymentData);
-          const summary = calculateMonthlySummary(applyFilters(payments));
+          const summary = calculateMonthlyDeposit(
+            applyDepositFilters(payments)
+          );
           const defaulter = fetchDefaulters(
             applyDefaulterFilters(defaulterPayments)
           );
           setDefaulters(defaulter);
-          setMonthlySummary(summary);
+          setMonthlyDeposit(summary);
         } else {
-          setMonthlySummary({});
+          setMonthlyDeposit({});
         }
       });
     };
 
     fetchPaymentData();
   }, [
-    selectedMonth,
-    selectedYear,
+    selectedDepositMonth,
+    selectedDepositYear,
     selectedDefaulterMonth,
     selectedDefaulterYear,
   ]);
 
-  const calculateMonthlySummary = (payments) => {
-    const summary = {};
+  useEffect(() => {
+    const fetchExpenseData = () => {
+      const expensesRef = ref(db, "expenses");
+
+      onValue(expensesRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const expenseData = snapshot.val();
+          const expenses = Object.values(expenseData);
+          const summary = calculateMonthlyExpense(
+            applyExpenseFilters(expenses)
+          );
+          setMonthlyExpense(summary);
+        } else {
+          setMonthlyExpense({});
+        }
+      });
+    };
+
+    fetchExpenseData();
+  }, [selectedExpenseMonth, selectedExpenseYear]);
+
+  const calculateMonthlyDeposit = (payments) => {
+    const deposit = {};
 
     for (const payment of payments) {
       const { month, year, amount, paymentMethod } = payment;
       const key = `${month}-${year}`;
 
-      if (summary[key]) {
-        if (summary[key][paymentMethod]) {
-          summary[key][paymentMethod] += parseFloat(amount);
+      if (deposit[key]) {
+        if (deposit[key][paymentMethod]) {
+          deposit[key][paymentMethod] += parseFloat(amount);
         } else {
-          summary[key][paymentMethod] = parseFloat(amount);
+          deposit[key][paymentMethod] = parseFloat(amount);
         }
       } else {
-        summary[key] = {
+        deposit[key] = {
           [paymentMethod]: parseFloat(amount),
         };
       }
     }
 
     // Calculate the total for each payment method
-    for (const key in summary) {
-      const paymentMethods = summary[key];
+    for (const key in deposit) {
+      const paymentMethods = deposit[key];
       let total = 0;
       for (const method in paymentMethods) {
         if (method !== "total") {
@@ -2189,14 +3127,14 @@ const ReportsContent = ({ currentUserName }) => {
       paymentMethods.total = total;
     }
 
-    return summary;
+    return deposit;
   };
 
-  const calculateGrandTotal = (paymentMethod) => {
+  const calculateDepositTotal = (paymentMethod) => {
     let grandTotal = 0;
 
-    for (const key in monthlySummary) {
-      const paymentMethods = monthlySummary[key];
+    for (const key in monthlyDeposit) {
+      const paymentMethods = monthlyDeposit[key];
 
       if (paymentMethods[paymentMethod]) {
         grandTotal += paymentMethods[paymentMethod];
@@ -2206,12 +3144,73 @@ const ReportsContent = ({ currentUserName }) => {
     return grandTotal;
   };
 
+  const calculateMonthlyExpense = (expenses) => {
+    const monthlyExpense = {};
+
+    for (const expenseItem of expenses) {
+      const { date, amount, paymentMethod } = expenseItem;
+      const [year, month] = date.split("-");
+      const monthName = new Date(date).toLocaleString("en-US", {
+        month: "long",
+      });
+      const key = `${monthName}-${year}`;
+
+      if (monthlyExpense[key]) {
+        if (monthlyExpense[key][paymentMethod]) {
+          monthlyExpense[key][paymentMethod] += parseFloat(amount);
+        } else {
+          monthlyExpense[key][paymentMethod] = parseFloat(amount);
+        }
+      } else {
+        monthlyExpense[key] = {
+          [paymentMethod]: parseFloat(amount),
+        };
+      }
+    }
+
+    // Calculate the total for each payment method
+    for (const key in monthlyExpense) {
+      const paymentMethods = monthlyExpense[key];
+      let total = 0;
+      for (const method in paymentMethods) {
+        if (method !== "total") {
+          total += paymentMethods[method];
+        }
+      }
+      paymentMethods.total = total;
+    }
+
+    return monthlyExpense;
+  };
+
+  const calculateExpenseTotal = (paymentMethod) => {
+    let grandTotal = 0;
+
+    for (const key in monthlyExpense) {
+      const paymentMethods = monthlyExpense[key];
+
+      if (paymentMethods[paymentMethod]) {
+        grandTotal += paymentMethods[paymentMethod];
+      }
+    }
+
+    return grandTotal;
+  };
+
+  const getCashInHand = (paymentMethod) => {
+    let cashInHand = 0;
+      const totalDeposit = calculateDepositTotal(paymentMethod);
+      const totalExpense = calculateExpenseTotal(paymentMethod);
+      cashInHand = totalDeposit - totalExpense;
+    return cashInHand;
+  };
+  
+
   const fetchDefaulters = (payments) => {
     const defaulters = {};
     const users = [];
     const keys = new Set();
 
-    const db = getDatabase(app);
     const usersRef = ref(db, "users");
 
     onValue(usersRef, (snapshot) => {
@@ -2266,22 +3265,46 @@ const ReportsContent = ({ currentUserName }) => {
     return defaulters;
   };
 
-  const applyFilters = (payments) => {
+  const applyDepositFilters = (payments) => {
     let filteredPayments = [...payments];
     filteredPayments = filteredPayments.filter(
       (payment) => payment.status === "Accepted"
     );
-    if (selectedMonth !== "") {
+    if (selectedDepositMonth !== "") {
       filteredPayments = filteredPayments.filter(
-        (payment) => payment.month === selectedMonth
+        (payment) => payment.month === selectedDepositMonth
       );
     }
-    if (selectedYear !== "") {
+    if (selectedDepositYear !== "") {
       filteredPayments = filteredPayments.filter(
-        (payment) => payment.year === selectedYear
+        (payment) => payment.year === selectedDepositYear
       );
     }
     return filteredPayments;
+  };
+
+  const applyExpenseFilters = (expenses) => {
+    let filteredExpenses = [...expenses];
+    filteredExpenses = filteredExpenses.filter(
+      (expense) => expense.status === "Accepted"
+    );
+    if (selectedExpenseMonth !== "") {
+      filteredExpenses = filteredExpenses.filter((expense) => {
+        const [year, month] = expense.date.split("-");
+        const monthName = new Date(expense.date).toLocaleString("en-US", {
+          month: "long",
+        });
+        return monthName === selectedExpenseMonth;
+      });
+    }
+
+    if (selectedExpenseYear !== "") {
+      filteredExpenses = filteredExpenses.filter((expense) => {
+        const [year, month] = expense.date.split("-");
+        return year === selectedExpenseYear;
+      });
+    }
+    return filteredExpenses;
   };
 
   const applyDefaulterFilters = (payments) => {
@@ -2298,6 +3321,8 @@ const ReportsContent = ({ currentUserName }) => {
     }
     return filteredPayments;
   };
+
+  
 
   const [showModal, setShowModal] = useState(false);
 
@@ -2363,9 +3388,9 @@ const ReportsContent = ({ currentUserName }) => {
     const defaultersList =
       defaulters[`${selectedDefaulterMonth}-${selectedDefaulterYear}`];
 
-    const mailBody = `Dear {name},\n\nThis is to inform you that you have not paid your dues for the month of ${selectedDefaulterMonth}, ${selectedDefaulterYear}.\n\nPlease pay your dues as soon as possible.\n\nRegards,\n${currentUserName},\nTreasurer, JUKTI - Official Club of CSE`;
+    const mailBody = `Dear {name},\n\nThis is to inform you that you have not paid your dues for the month of ${selectedDefaulterMonth}, ${selectedDefaulterYear}.\n\nPlease pay your dues as soon as possible.\n\nRegards,\n${currentUserName},\n${currentUserPosition}, JUKTI - Official Club of CSE`;
     const mailSubject = `Payment Reminder for JUKTI Funds`;
-    const mailer = `Treasurer - JUKTI - Official Club of CSE`;
+    const mailer = `${position} - JUKTI - Official Club of CSE`;
 
     const requestBody = {
       userEmail: email,
@@ -2399,254 +3424,565 @@ const ReportsContent = ({ currentUserName }) => {
     }
   };
 
+const handleDepositPDFDownload = () => {
+  // Create a new jsPDF instance
+  const doc = new jsPDF();
+
+  // Define table column headers
+  const tableColumn = [
+    "Month & Year",
+    ...allPaymentMethods.map((paymentMethod) => paymentMethod.name),
+    "Total"
+  ];
+
+  // Define table rows
+  const tableRows = Object.entries(monthlyDeposit).map(([key, paymentMethods]) => {
+    const [month, year] = key.split("-");
+    const rowData = [
+      `${month} ${year}`,
+      ...allPaymentMethods.map((paymentMethod) => paymentMethods[paymentMethod.name] || 0),
+      paymentMethods.total || 0
+    ];
+    return rowData;
+  });
+
+  // Add table to the document
+  doc.autoTable({
+    head: [tableColumn],
+    body: tableRows,
+  });
+
+  // Save the PDF with a unique name
+  doc.save(`JUKTI-Funds-deposit-report-${new Date().getTime()}.pdf`);
+};
+
+const handleExpensePDFDownload = () => {
+  // Create a new jsPDF instance
+  const doc = new jsPDF();
+
+  // Define table column headers
+  const tableColumn = [
+    "Month & Year",
+    ...allPaymentMethods.map((paymentMethod) => paymentMethod.name),
+    "Total"
+  ];
+
+  // Define table rows
+  const tableRows = Object.entries(monthlyExpense).map(([key, paymentMethods]) => {
+    const [month, year] = key.split("-");
+    const rowData = [
+      `${month} ${year}`,
+      ...allPaymentMethods.map((paymentMethod) => paymentMethods[paymentMethod.name] || 0),
+      paymentMethods.total || 0
+    ];
+    return rowData;
+  });
+
+  // Add table to the document
+  doc.autoTable({
+    head: [tableColumn],
+    body: tableRows,
+  });
+
+  // Save the PDF with a unique name
+  doc.save(`JUKTI-Funds-expense-report-${new Date().getTime()}.pdf`);
+};
+
+const handleDefaulterPDFDownload = () => {
+  // Create a new jsPDF instance
+  const doc = new jsPDF();
+
+  // Define table column headers
+  const tableColumn = [
+    "Month & Year",
+    "Name",
+    "Position",
+    "Department",
+  ];
+
+  // Define table rows
+  const tableRows = Object.entries(defaulters).map(([key, defaultersList]) => {
+    const [month, year] = key.split("-");
+    const rowData = defaultersList.map((defaulter) => [
+      `${month} ${year}`,
+      defaulter.name,
+      defaulter.position,
+      defaulter.department,
+    ]);
+    return rowData;
+  }).flat();
+
+  // Add table to the document
+  doc.autoTable({
+    head: [tableColumn],
+    body: tableRows,
+  });
+
+  // Save the PDF with a unique name
+  doc.save(`JUKTI-Funds-defaulters-report-${new Date().getTime()}.pdf`);
+};
+
+
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
       <h2 className="text-2xl text-white mb-6">Reports</h2>
       <div className="grid grid-cols-1 gap-4">
-        <h2 className="text-white text-xl mb-4">Monthly Report</h2>
-        <div className="flex flex-wrap justify-between items-center mb-4">
-          <div className="flex flex-wrap">
-            <div className="mr-4">
-              <label htmlFor="month" className="block text-white">
-                Month:
-              </label>
-              <select
-                id="month"
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+        <Disclosure>
+          {({ open }) => (
+            <>
+              <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                <span className="text-lg">Cash in Hand</span>
+                <ChevronDownIcon
+                  className={`${
+                    open ? "transform rotate-180" : ""
+                  } w-5 h-5 text-white`}
+                />
+              </Disclosure.Button>
+              <Transition
+                enter="transition duration-200 ease-out"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="transition duration-150 ease-out"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
               >
-                <option value="">All</option>
-                <option value="January">January</option>
-                <option value="February">February</option>
-                <option value="March">March</option>
-                <option value="April">April</option>
-                <option value="May">May</option>
-                <option value="June">June</option>
-                <option value="July">July</option>
-                <option value="August">August</option>
-                <option value="September">September</option>
-                <option value="October">October</option>
-                <option value="November">November</option>
-                <option value="December">December</option>
-              </select>
-            </div>
-            <div className="mr-4">
-              <label htmlFor="year" className="block text-white">
-                Year:
-              </label>
-              <select
-                id="year"
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white">
+                  <div className="overflow-x-auto bg-gray-800 p-4 rounded-xl">
+                    <div className="w-full">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            {allPaymentMethods.map((paymentMethod) => (
+                              <th
+                                className="text-gray-300 text-left py-2 px-4 border-b"
+                                key={paymentMethod.name}
+                              >
+                                {paymentMethod.name}
+                              </th>
+                            ))}
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            {allPaymentMethods.map((paymentMethod) => (
+                              <td
+                                className="text-gray-100 py-2 px-4 border-b"
+                                key={paymentMethod.name}
+                              >
+                                {getCashInHand(paymentMethod.name) || 0}
+                              </td>
+                            ))}
+                            <td className="text-gray-100 py-2 px-4 border-b">
+                              {getCashInHand("total") || 0}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </Disclosure.Panel>
+              </Transition>
+            </>
+          )}
+        </Disclosure>
+        <Disclosure>
+          {({ open }) => (
+            <>
+              <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                <h2 className="text-white text-xl">Monthly Collection</h2>
+                <ChevronDownIcon
+                  className={`${
+                    open ? "transform rotate-180" : ""
+                  } w-5 h-5 text-white`}
+                />
+              </Disclosure.Button>
+              <Transition
+                enter="transition duration-200 ease-out"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="transition duration-150 ease-out"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
               >
-                <option value="">All</option>
-                {Array.from({ length: 6 }).map((_, index) => {
-                  const year = new Date().getFullYear() - index;
-                  return (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-          </div>
-          <div className="flex items-center gap-8">
-            <button className="flex items-center bg-transparent text-jukti-orange">
-              <FontAwesomeIcon icon={faFilePdf} className="m-2 w-8 h-8" />
-              <span>Download PDF</span>
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto bg-gray-800 p-4 rounded-xl">
-          <div className="w-full">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="text-gray-300 text-left py-2 px-4 border-b">
-                    Month & Year
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-4 border-b">
-                    bKash
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-4 border-b">
-                    Nagad
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-4 border-b">
-                    Rocket
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-4 border-b">
-                    Bank
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-4 border-b">
-                    Total
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(monthlySummary).map(([key, paymentMethods]) => {
-                  const [month, year] = key.split("-");
-                  return (
-                    <tr key={key}>
-                      <td className="text-white py-2 px-4 border-b">
-                        {month} {year}
-                      </td>
-                      <td className="text-white py-2 px-4 border-b">
-                        {paymentMethods.bKash || 0}
-                      </td>
-                      <td className="text-white py-2 px-4 border-b">
-                        {paymentMethods.Nagad || 0}
-                      </td>
-                      <td className="text-white py-2 px-4 border-b">
-                        {paymentMethods.Rocket || 0}
-                      </td>
-                      <td className="text-white py-2 px-4 border-b">
-                        {paymentMethods.Bank || 0}
-                      </td>
-                      <td className="text-white py-2 px-4 border-b">
-                        {paymentMethods.total || 0}
-                      </td>
-                    </tr>
-                  );
-                })}
-                <tr>
-                  <td className="text-jukti-orange py-2 px-4 border-b">
-                    Grand Total
-                  </td>
-                  <td className="text-jukti-orange py-2 px-4 border-b">
-                    {calculateGrandTotal("bKash")}
-                  </td>
-                  <td className="text-jukti-orange py-2 px-4 border-b">
-                    {calculateGrandTotal("Nagad")}
-                  </td>
-                  <td className="text-jukti-orange py-2 px-4 border-b">
-                    {calculateGrandTotal("Rocket")}
-                  </td>
-                  <td className="text-jukti-orange py-2 px-4 border-b">
-                    {calculateGrandTotal("Bank")}
-                  </td>
-                  <td className="text-jukti-orange py-2 px-4 border-b">
-                    {calculateGrandTotal("total")}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <h2 className="text-white text-xl mt-4">Defaulter Report</h2>
-        <div className="flex flex-wrap justify-between items-center mb-4">
-          <div className="flex flex-wrap">
-            <div className="mr-4">
-              <label htmlFor="month" className="block text-white">
-                Month:
-              </label>
-              <select
-                id="month"
-                value={selectedDefaulterMonth}
-                onChange={(e) => setSelectedDefaulterMonth(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white">
+                  <div className="flex flex-wrap justify-between items-center mb-4">
+                    <div className="flex flex-wrap">
+                      <div className="mr-4">
+                        <label htmlFor="month" className="block text-white">
+                          Month:
+                        </label>
+                        <select
+                          id="month"
+                          value={selectedDepositMonth}
+                          onChange={(e) =>
+                            setSelectedDepositMonth(e.target.value)
+                          }
+                          className="px-4 py-2 border text-black border-gray-300 rounded-md focus:outline-none"
+                        >
+                          {getMonthOptions()}
+                        </select>
+                      </div>
+                      <div className="mr-4">
+                        <label htmlFor="year" className="block text-white">
+                          Year:
+                        </label>
+                        <select
+                          id="year"
+                          value={selectedDepositYear}
+                          onChange={(e) =>
+                            setSelectedDepositYear(e.target.value)
+                          }
+                          className="px-4 py-2 border text-black border-gray-300 rounded-md focus:outline-none"
+                        >
+                          {getYearOptions()}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-8">
+                      <button className="flex items-center bg-transparent text-jukti-orange" onClick={handleDepositPDFDownload}>
+                        <FontAwesomeIcon
+                          icon={faFilePdf}
+                          className="m-2 w-8 h-8"
+                        />
+                        <span>Download PDF</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto bg-gray-800 p-4 rounded-xl">
+                    <div className="w-full">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Month & Year
+                            </th>
+                            {allPaymentMethods.map((paymentMethod) => (
+                              <th
+                                className="text-gray-300 text-left py-2 px-4 border-b"
+                                key={paymentMethod.name}
+                              >
+                                {paymentMethod.name}
+                              </th>
+                            ))}
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(monthlyDeposit).map(
+                            ([key, paymentMethods]) => {
+                              const [month, year] = key.split("-");
+                              return (
+                                <tr key={key}>
+                                  <td className="text-white py-2 px-4 border-b">
+                                    {month} {year}
+                                  </td>
+                                  {allPaymentMethods.map((paymentMethod) => (
+                                    <td
+                                      className="text-white py-2 px-4 border-b"
+                                      key={paymentMethod.name}
+                                    >
+                                      {paymentMethods[paymentMethod.name] || 0}
+                                    </td>
+                                  ))}
+                                  <td className="text-white py-2 px-4 border-b">
+                                    {paymentMethods.total || 0}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                          )}
+                          <tr>
+                            <td className="text-jukti-orange py-2 px-4 border-b">
+                              Grand Total
+                            </td>
+                            {allPaymentMethods.map((paymentMethod) => (
+                              <td
+                                className="text-jukti-orange py-2 px-4 border-b"
+                                key={paymentMethod.name}
+                              >
+                                {calculateDepositTotal(paymentMethod.name)}
+                              </td>
+                            ))}
+                            <td className="text-jukti-orange py-2 px-4 border-b">
+                              {calculateDepositTotal("total")}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </Disclosure.Panel>
+              </Transition>
+            </>
+          )}
+        </Disclosure>
+        <Disclosure>
+          {({ open }) => (
+            <>
+              <Disclosure.Button className="flex justify-between items-center w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                <h2 className="text-white text-xl">Monthly Expenses</h2>
+                <ChevronDownIcon
+                  className={`${
+                    open ? "transform rotate-180" : ""
+                  } w-5 h-5 text-white`}
+                />
+              </Disclosure.Button>
+              <Transition
+                enter="transition duration-200 ease-out"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="transition duration-150 ease-out"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
               >
-                <option value="">All</option>
-                <option value="January">January</option>
-                <option value="February">February</option>
-                <option value="March">March</option>
-                <option value="April">April</option>
-                <option value="May">May</option>
-                <option value="June">June</option>
-                <option value="July">July</option>
-                <option value="August">August</option>
-                <option value="September">September</option>
-                <option value="October">October</option>
-                <option value="November">November</option>
-                <option value="December">December</option>
-              </select>
-            </div>
-            <div className="mr-4">
-              <label htmlFor="year" className="block text-white">
-                Year:
-              </label>
-              <select
-                id="year"
-                value={selectedDefaulterYear}
-                onChange={(e) => setSelectedDefaulterYear(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none"
+                <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white">
+                  <div className="flex flex-wrap justify-between items-center mb-4">
+                    <div className="flex flex-wrap">
+                      <div className="mr-4">
+                        <label htmlFor="month" className="block text-white">
+                          Month:
+                        </label>
+                        <select
+                          id="month"
+                          value={selectedExpenseMonth}
+                          onChange={(e) =>
+                            setSelectedExpenseMonth(e.target.value)
+                          }
+                          className="px-4 py-2 border text-black border-gray-300 rounded-md focus:outline-none"
+                        >
+                          {getMonthOptions()}
+                        </select>
+                      </div>
+                      <div className="mr-4">
+                        <label htmlFor="year" className="block text-white">
+                          Year:
+                        </label>
+                        <select
+                          id="year"
+                          value={selectedExpenseYear}
+                          onChange={(e) =>
+                            setSelectedExpenseYear(e.target.value)
+                          }
+                          className="px-4 py-2 border text-black border-gray-300 rounded-md focus:outline-none"
+                        >
+                          {getYearOptions()}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-8">
+                      <button className="flex items-center bg-transparent text-jukti-orange" onClick={handleExpensePDFDownload}>
+                        <FontAwesomeIcon
+                          icon={faFilePdf}
+                          className="m-2 w-8 h-8"
+                        />
+                        <span>Download PDF</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto bg-gray-800 p-4 rounded-xl">
+                    <div className="w-full">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Month & Year
+                            </th>
+                            {allPaymentMethods.map((paymentMethod) => (
+                              <th
+                                className="text-gray-300 text-left py-2 px-4 border-b"
+                                key={paymentMethod.name}
+                              >
+                                {paymentMethod.name}
+                              </th>
+                            ))}
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(monthlyExpense).map(
+                            ([key, paymentMethods]) => {
+                              const [month, year] = key.split("-");
+                              return (
+                                <tr key={key}>
+                                  <td className="text-white py-2 px-4 border-b">
+                                    {month} {year}
+                                  </td>
+                                  {allPaymentMethods.map((paymentMethod) => (
+                                    <td
+                                      className="text-white py-2 px-4 border-b"
+                                      key={paymentMethod.name}
+                                    >
+                                      {paymentMethods[paymentMethod.name] || 0}
+                                    </td>
+                                  ))}
+                                  <td className="text-white py-2 px-4 border-b">
+                                    {paymentMethods.total||0}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                          )}
+                          <tr>
+                            <td className="text-jukti-orange py-2 px-4 border-b">
+                              Grand Total
+                            </td>
+                            {allPaymentMethods.map((paymentMethod) => (
+                              <td
+                                className="text-jukti-orange py-2 px-4 border-b"
+                                key={paymentMethod.name}
+                              >
+                                {calculateExpenseTotal(paymentMethod.name)}
+                              </td>
+                            ))}
+                            <td className="text-jukti-orange py-2 px-4 border-b">
+                              {calculateExpenseTotal("total")}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </Disclosure.Panel>
+              </Transition>
+            </>
+          )}
+        </Disclosure>
+        <Disclosure>
+          {({ open }) => (
+            <>
+              <Disclosure.Button className="flex justify-between items-center w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                <h2 className="text-white text-xl">Defaulter Report</h2>
+                <ChevronDownIcon
+                  className={`${
+                    open ? "transform rotate-180" : ""
+                  } w-5 h-5 text-white`}
+                />
+              </Disclosure.Button>
+              <Transition
+                enter="transition duration-200 ease-out"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="transition duration-150 ease-out"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
               >
-                <option value="">All</option>
-                {Array.from({ length: 6 }).map((_, index) => {
-                  const year = new Date().getFullYear() - index;
-                  return (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  );
-                })}
-              </select>
-            </div>
-          </div>
-          <div className="flex items-center gap-8">
-            <button className="flex items-center bg-transparent text-jukti-orange">
-              <FontAwesomeIcon icon={faFilePdf} className="m-2 w-8 h-8" />
-              <span>Download PDF</span>
-            </button>
-            <button
-              className="flex items-center bg-transparent text-white"
-              onClick={() => setShowModal(true)}
-            >
-              <FontAwesomeIcon icon={faMailBulk} className="m-2 w-8 h-8" />
-              <span>Send Reminder Email</span>
-            </button>
-          </div>
-        </div>
-        {showModal && <MyModal />}
-        <div className="overflow-x-auto bg-gray-800 p-2 rounded-xl">
-          <div className="w-full">
-            <table className="w-full">
-              <thead>
-                <tr>
-                  <th className="text-gray-300 text-left py-2 px-4 border-b">
-                    Month & Year
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-4 border-b">
-                    Name
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-4 border-b">
-                    Position
-                  </th>
-                  <th className="text-gray-300 text-left py-2 px-4 border-b">
-                    Department
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(defaulters).map(([key, defaulterList]) => {
-                  const [month, year] = key.split("-");
-                  return (
-                    <React.Fragment key={key}>
-                      {defaulterList.map((defaulter) => (
-                        <tr key={defaulter.email}>
-                          <td className="text-white py-2 px-4 border-b">
-                            {month} {year}
-                          </td>
-                          <td className="text-white py-2 px-4 border-b">
-                            {defaulter.name}
-                          </td>
-                          <td className="text-white py-2 px-4 border-b">
-                            {defaulter.position}
-                          </td>
-                          <td className="text-white py-2 px-4 border-b">
-                            {defaulter.department}
-                          </td>
-                        </tr>
-                      ))}
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white">
+                  <div className="flex flex-wrap justify-between items-center mb-4">
+                    <div className="flex flex-wrap">
+                      <div className="mr-4">
+                        <label htmlFor="month" className="block text-white">
+                          Month:
+                        </label>
+                        <select
+                          id="month"
+                          value={selectedDefaulterMonth}
+                          onChange={(e) =>
+                            setSelectedDefaulterMonth(e.target.value)
+                          }
+                          className="px-4 py-2 border text-black border-gray-300 rounded-md focus:outline-none"
+                        >
+                          {getMonthOptions()}
+                        </select>
+                      </div>
+                      <div className="mr-4">
+                        <label htmlFor="year" className="block text-white">
+                          Year:
+                        </label>
+                        <select
+                          id="year"
+                          value={selectedDefaulterYear}
+                          onChange={(e) =>
+                            setSelectedDefaulterYear(e.target.value)
+                          }
+                          className="px-4 py-2 border text-black border-gray-300 rounded-md focus:outline-none"
+                        >
+                          <option value="">All</option>
+                          {getYearOptions()}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-8">
+                      <button className="flex items-center bg-transparent text-jukti-orange" onClick={handleDefaulterPDFDownload}>
+                        <FontAwesomeIcon
+                          icon={faFilePdf}
+                          className="m-2 w-8 h-8"
+                        />
+                        <span>Download PDF</span>
+                      </button>
+                      <button
+                        className="flex items-center bg-transparent text-white"
+                        onClick={() => setShowModal(true)}
+                      >
+                        <FontAwesomeIcon
+                          icon={faMailBulk}
+                          className="m-2 w-8 h-8"
+                        />
+                        <span>Send Reminder Email</span>
+                      </button>
+                    </div>
+                  </div>
+                  {showModal && <MyModal />}
+                  <div className="overflow-x-auto bg-gray-800 p-2 rounded-xl">
+                    <div className="w-full">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Month & Year
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Name
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Position
+                            </th>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Department
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(defaulters).map(
+                            ([key, defaulterList]) => {
+                              const [month, year] = key.split("-");
+                              return (
+                                <React.Fragment key={key}>
+                                  {defaulterList.map((defaulter) => (
+                                    <tr key={defaulter.email}>
+                                      <td className="text-white py-2 px-4 border-b">
+                                        {month} {year}
+                                      </td>
+                                      <td className="text-white py-2 px-4 border-b">
+                                        {defaulter.name}
+                                      </td>
+                                      <td className="text-white py-2 px-4 border-b">
+                                        {defaulter.position}
+                                      </td>
+                                      <td className="text-white py-2 px-4 border-b">
+                                        {defaulter.department}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </React.Fragment>
+                              );
+                            }
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </Disclosure.Panel>
+              </Transition>
+            </>
+          )}
+        </Disclosure>
       </div>
     </div>
   );
@@ -2699,7 +4035,6 @@ const CalenderContent = ({ department, isAdmin }) => {
       type: eventType,
     };
 
-    const db = getDatabase(app);
     const eventsRef = ref(db, "events");
     push(eventsRef, newEvent);
 
@@ -2711,7 +4046,6 @@ const CalenderContent = ({ department, isAdmin }) => {
   };
 
   useEffect(() => {
-    const db = getDatabase(app);
     const eventsRef = ref(db, "events");
 
     onValue(eventsRef, (snapshot) => {
@@ -2757,7 +4091,6 @@ const CalenderContent = ({ department, isAdmin }) => {
     e.preventDefault();
 
     if (newEventType.trim() !== "" && newEventTypeColor.trim() !== "") {
-      const db = getDatabase(app);
       const eventTypesRef = ref(db, "eventTypes");
 
       const type = {
@@ -2779,7 +4112,6 @@ const CalenderContent = ({ department, isAdmin }) => {
   };
 
   const handleDeleteEventType = (eventTypeId) => {
-    const db = getDatabase(app);
     const eventTypeRef = ref(db, `eventTypes/${eventTypeId}`);
     remove(eventTypeRef);
   };
@@ -2831,7 +4163,6 @@ const CalenderContent = ({ department, isAdmin }) => {
     };
 
     const handleDeleteEvent = () => {
-      const db = getDatabase(app);
       const eventRef = ref(db, `events/${selectedEvent.id}`);
       remove(eventRef);
       setShowModal(false);
@@ -2857,8 +4188,6 @@ const CalenderContent = ({ department, isAdmin }) => {
         end: editedEventEndDateTime,
         type: editedEventType,
       };
-
-      const db = getDatabase(app);
       const eventRef = ref(db, `events/${selectedEvent.id}`);
       update(eventRef, updatedEvent);
 
@@ -2971,8 +4300,8 @@ const CalenderContent = ({ department, isAdmin }) => {
                   value={
                     isEditing
                       ? moment(editedEventStartDateTime).format(
-                        "YYYY-MM-DDTHH:mm"
-                      )
+                          "YYYY-MM-DDTHH:mm"
+                        )
                       : moment(selectedEvent.start).format("YYYY-MM-DDTHH:mm")
                   }
                   onChange={(e) =>
@@ -2995,8 +4324,8 @@ const CalenderContent = ({ department, isAdmin }) => {
                   value={
                     isEditing
                       ? moment(editedEventEndDateTime).format(
-                        "YYYY-MM-DDTHH:mm"
-                      )
+                          "YYYY-MM-DDTHH:mm"
+                        )
                       : moment(selectedEvent.end).format("YYYY-MM-DDTHH:mm")
                   }
                   onChange={(e) =>
@@ -3066,7 +4395,7 @@ const CalenderContent = ({ department, isAdmin }) => {
   };
 
   return (
-    <div className="max-w-6xl grid w-screen grid-cols-1 pr-12">
+    <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
       <h2 className="text-2xl text-white mb-6">Event Calendar</h2>
       <div className="mb-4">
         <div style={{ height: 500 }}>
@@ -3185,7 +4514,7 @@ const CalenderContent = ({ department, isAdmin }) => {
           </div>
         )}
         <div className="my-4" />
-        <h3 className="text-lg text-white">Event Types</h3>
+        <h3 className="text-lg text-white">Create Event Types</h3>
         {(department === "Public Relations" || isAdmin) && (
           <form
             onSubmit={handleCreateEventType}
@@ -3255,6 +4584,263 @@ const CalenderContent = ({ department, isAdmin }) => {
           ))}
         </div>
       </div>
+    </div>
+  );
+};
+
+const RecordExpenseContent = () => {
+  const [expenseTitle, setExpenseTitle] = useState("");
+  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseDate, setExpenseDate] = useState("");
+  const [expenseDetails, setExpenseDetails] = useState("");
+  const [expensePaymentMethod, setExpensePaymentMethod] = useState("");
+  const [expensePaymentMethodDetails, setExpensePaymentMethodDetails] =
+    useState("");
+  const [expenseFile, setExpenseFile] = useState(null);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+  const fileInputRef = useRef(null);
+
+  useEffect(() => {
+    fetchPaymentMethods();
+  }, []);
+
+  const fetchPaymentMethods = async () => {
+    const paymentMethodsRef = ref(db, "paymentMethods");
+    onValue(paymentMethodsRef, (snapshot) => {
+      const paymentMethodsData = snapshot.val();
+      const paymentMethodsList = [];
+
+      snapshot.forEach((childSnapshot) => {
+        const paymentMethod = {
+          id: childSnapshot.key,
+          ...childSnapshot.val(),
+        };
+        paymentMethodsList.push(paymentMethod);
+      });
+
+      setPaymentMethods(paymentMethodsList);
+    });
+  };
+
+  const handleCreateExpense = async (e) => {
+    e.preventDefault();
+
+    const expense = {
+      email: jsCookie.get("userEmail"),
+      title: expenseTitle,
+      amount: expenseAmount,
+      date: expenseDate,
+      details: expenseDetails,
+      paymentMethod: expensePaymentMethod,
+      paymentMethodDetails: expensePaymentMethodDetails,
+      status: "Pending",
+      fileUrl: await handleFileUpload(expenseFile),
+    };
+    await createExpense(expense);
+  };
+
+  const handleFileUpload = async (file) => {
+    if (file) {
+      const storage = getStorage(app);
+      const storageRef = storagesRef(storage, `expenses/${file.name}`);
+      try {
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        console.log("Download URL:", downloadURL);
+        return downloadURL;
+      } catch (error) {
+        console.error("Error uploading file:", error);
+        return null;
+      }
+    }
+    return null;
+  };
+
+  const createExpense = async (expense) => {
+    try {
+      const expensesRef = ref(db, "expenses");
+
+      const newExpenseRef = push(expensesRef);
+      const newExpenseKey = newExpenseRef.key;
+
+      await set(newExpenseRef, expense);
+      resetForm();
+
+      console.log("Expense created successfully!");
+    } catch (error) {
+      console.error("Error creating expense:", error);
+    }
+  };
+
+  const handleFileChange = async (file) => {
+    if (
+      file.type === "image/png" ||
+      file.type === "image/jpeg" ||
+      file.type === "application/pdf" ||
+      file.type === "image/jpg"
+    ) {
+      setExpenseFile(file);
+    } else {
+      alert("Upload png or jpg/jpeg or pdf files only!");
+      setExpenseFile(null);
+      fileInputRef.current.value = null;
+    }
+  };
+
+  const resetForm = () => {
+    setExpenseName("");
+    setExpenseAmount("");
+    setExpenseDate("");
+    setExpenseDetails("");
+    setExpensePaymentMethod("");
+    setExpenseFile(null);
+    fileInputRef.current.value = null;
+    setExpensePaymentMethodDetails("");
+  };
+
+  return (
+    <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
+      <h2 className="text-2xl text-white">Record Expense</h2>
+      <form
+        onSubmit={handleCreateExpense}
+        className="gap-4 py-16 justify-start rounded-lg"
+      >
+        <div className="mb-4">
+          <label
+            className="block text-gray-300 text-sm font-bold mb-2"
+            htmlFor="expenseTitle"
+          >
+            Expense Title
+          </label>
+          <input
+            className="appearance-none bg-gray-700 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+            id="expenseTitle"
+            type="text"
+            placeholder="Subject of the expense"
+            value={expenseTitle}
+            onChange={(e) => setExpenseTitle(e.target.value)}
+            required
+          />
+        </div>
+        <div className="grid grid-cols-2 justify-between gap-4">
+          <div className="mb-4">
+            <label
+              className="block text-gray-300 text-sm font-bold mb-2"
+              htmlFor="expenseAmount"
+            >
+              Amount Spent
+            </label>
+            <input
+              className="appearance-none bg-gray-700 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+              id="expenseAmount"
+              type="number"
+              placeholder="Amount in Taka"
+              value={expenseAmount}
+              onChange={(e) => setExpenseAmount(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label
+              className="block text-gray-300 text-sm font-bold mb-2"
+              htmlFor="expenseDate"
+            >
+              Date of Expense
+            </label>
+            <input
+              className="appearance-none bg-gray-700 rounded w-full py-1.5 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+              id="expenseDate"
+              type="date"
+              value={expenseDate}
+              onChange={(e) => setExpenseDate(e.target.value)}
+              required
+            />
+          </div>
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-300 text-sm font-bold mb-2"
+            htmlFor="expenseDetails"
+          >
+            Expense Details
+          </label>
+          <textarea
+            className="appearance-none bg-gray-700 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+            id="expenseDetails"
+            type="text"
+            placeholder="Details of the expense"
+            value={expenseDetails}
+            onChange={(e) => setExpenseDetails(e.target.value)}
+          />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 justify-between gap-2">
+          <div className="mb-4">
+            <label
+              className="block text-gray-300 text-sm font-bold mb-2"
+              htmlFor="expensePaymentMethod"
+            >
+              Reimbursement Payment Method
+            </label>
+            <select
+              className="appearance-none bg-gray-700 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+              id="expensePaymentMethod"
+              value={expensePaymentMethod}
+              onChange={(e) => setExpensePaymentMethod(e.target.value)}
+              required
+            >
+              <option value="" disabled>
+                Payment Method to receive reimbursement
+              </option>
+              {paymentMethods.map((paymentMethod) => (
+                <option key={paymentMethod.id} value={paymentMethod.name}>
+                  {paymentMethod.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="mb-4">
+            <label
+              className="block text-gray-300 text-sm font-bold mb-2"
+              htmlFor="expenseFile"
+            >
+              Invoice/Receipt
+            </label>
+            <input
+              className="appearance-none bg-gray-700 rounded w-full py-1.5 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+              id="expenseFile"
+              type="file"
+              accept=".png, .jpg, .jpeg, .pdf"
+              ref={fileInputRef}
+              onChange={(e) => handleFileChange(e.target.files[0])}
+            />
+          </div>
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-300 text-sm font-bold mb-2"
+            htmlFor="expensePaymentMethodDetails"
+          >
+            Details of Payment Method
+          </label>
+          <input
+            className="appearance-none bg-gray-700 rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+            id="expensePaymentMethodDetails"
+            type="text"
+            placeholder="Expense Payment Method Details"
+            value={expensePaymentMethodDetails}
+            onChange={(e) => setExpensePaymentMethodDetails(e.target.value)}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <button
+            className="w-full bg-jukti-orange hover:bg-jukti-orange-dark text-white font-bold px-3 py-2 rounded focus:outline-none"
+            type="submit"
+          >
+            Record Expense
+          </button>
+        </div>
+      </form>
     </div>
   );
 };
