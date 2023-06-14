@@ -61,7 +61,7 @@ const getMonthOptions = () => {
     <option value="September">September</option>,
     <option value="October">October</option>,
     <option value="November">November</option>,
-    <option value="December">December</option>
+    <option value="December">December</option>,
   ];
 };
 
@@ -69,7 +69,7 @@ const getYearOptions = () => {
   const currentYear = new Date().getFullYear();
   const years = [];
   years.push(<option value="">Select Year</option>);
-  for (let i = 2023; i<= currentYear+5; i++) {
+  for (let i = 2023; i <= currentYear + 5; i++) {
     years.push(<option value={i}>{i}</option>);
   }
   return years;
@@ -200,6 +200,18 @@ const Dashboard = () => {
                 >
                   <span className="text-white">Record Deposit</span>
                 </li>
+                {isAdmin ? (
+                  <li
+                    className={`py-2 pl-4 cursor-pointer ${
+                      selectedMenu === "receivedFunds"
+                        ? "bg-jukti-orange"
+                        : "hover:bg-gray-800"
+                    }`}
+                    onClick={() => handleMenuSelection("receivedFunds")}
+                  >
+                    <span className="text-white">Received Funds</span>
+                  </li>
+                ) : null}
                 <li
                   className={`py-2 pl-4 cursor-pointer ${
                     selectedMenu === "RecordExpense"
@@ -325,12 +337,16 @@ const Dashboard = () => {
           </div>
           <div className=" bg-gray-900 min-h-full mb-4">
             {selectedMenu === "Payment" && <PaymentContent />}
+            {selectedMenu === "receivedFunds" && <ReceivedFundsContent />}
             {selectedMenu === "RecordExpense" && <RecordExpenseContent />}
             {selectedMenu === "PaymentHistory" && <PaymentHistoryContent />}
             {selectedMenu === "profile" && <ProfileContent />}
             {selectedMenu === "allpayment" && <AllPaymentContent />}
             {selectedMenu === "reports" && (
-              <ReportsContent currentUserName={name} currentUserPosition={position} />
+              <ReportsContent
+                currentUserName={name}
+                currentUserPosition={position}
+              />
             )}
             {selectedMenu === "calender" && (
               <CalenderContent department={department} isAdmin={isAdmin} />
@@ -630,6 +646,7 @@ const PaymentContent = () => {
             type="text"
             name="number"
             id="number"
+            placeholder="Account Number / Mobile Number"
             value={paymentData.number}
             onChange={handleChange}
             required
@@ -665,6 +682,7 @@ const PaymentContent = () => {
             type="text"
             name="amount"
             id="amount"
+            placeholder="Amount Paid"
             value={paymentData.amount}
             onChange={handleChange}
             required
@@ -803,25 +821,25 @@ const PendingPaymentContent = () => {
   const handleExpenseAccept = (expenseId) => {
     const expenseRef = ref(db, `expenses/${expenseId}`);
     update(expenseRef, { status: "Accepted", transactionId: expenseTrxId })
-  .then(() => {
-    const updatedExpenses = pendingExpenses.map((expense) => {
-      if (expense.id === expenseId) {
-        return {
-          ...expense,
-          status: "Accepted",
-          transactionId: expenseTrxId,
-        };
-      }
-      return expense;
-    });
-    const expenses = updatedExpenses.filter(
-      (expense) => expense.id !== expenseId
-    );
-    setPendingExpenses(expenses);
-  })
-  .catch((error) => {
-    console.log("Error accepting expense:", error);
-  });
+      .then(() => {
+        const updatedExpenses = pendingExpenses.map((expense) => {
+          if (expense.id === expenseId) {
+            return {
+              ...expense,
+              status: "Accepted",
+              transactionId: expenseTrxId,
+            };
+          }
+          return expense;
+        });
+        const expenses = updatedExpenses.filter(
+          (expense) => expense.id !== expenseId
+        );
+        setPendingExpenses(expenses);
+      })
+      .catch((error) => {
+        console.log("Error accepting expense:", error);
+      });
   };
 
   const handleExpenseReject = (expenseId) => {
@@ -856,7 +874,7 @@ const PendingPaymentContent = () => {
 
   const ExpenseAcceptModal = ({ expenseId, onClose }) => {
     const inputRef = useRef(null);
-  
+
     const handleSubmit = (e) => {
       e.preventDefault();
       handleExpenseAccept(expenseId);
@@ -866,40 +884,46 @@ const PendingPaymentContent = () => {
     useEffect(() => {
       inputRef.current.focus();
     }, []);
-  
+
     const handleInputChange = (e) => {
       setExpenseTrxId(e.target.value);
     };
-  
+
     return (
       <div className="fixed inset-0 flex items-center justify-center z-50">
-      <div className="max-w-3xl w-full bg-gray-800 rounded-lg p-4">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl text-white">Accept Expense</h2>
-          <button
-            className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-            onClick={onClose}
-          >
-            Close
-          </button>
-        </div>
-        <form className="flex flex-col items-center justify-center" onSubmit={handleSubmit}>
-          <div className="flex flex-col items-center justify-center">
-            <label className="text-white">Transaction ID</label>
-            <input
-              ref={inputRef}
-              className="w-64 px-2 py-1 mb-4 text-black rounded-lg"
-              type="text"
-              value={expenseTrxId}
-              onChange={handleInputChange}
-            />
+        <div className="max-w-3xl w-full bg-gray-800 rounded-lg p-4">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl text-white">Accept Expense</h2>
+            <button
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              onClick={onClose}
+            >
+              Close
+            </button>
           </div>
-          <button className="px-4 py-2 mt-4 text-white bg-green-500 rounded-lg" type="submit">
-            Accept
-          </button>
-        </form>
+          <form
+            className="flex flex-col items-center justify-center"
+            onSubmit={handleSubmit}
+          >
+            <div className="flex flex-col items-center justify-center">
+              <label className="text-white">Transaction ID</label>
+              <input
+                ref={inputRef}
+                className="w-64 px-2 py-1 mb-4 text-black rounded-lg"
+                type="text"
+                value={expenseTrxId}
+                onChange={handleInputChange}
+              />
+            </div>
+            <button
+              className="px-4 py-2 mt-4 text-white bg-green-500 rounded-lg"
+              type="submit"
+            >
+              Accept
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
     );
   };
 
@@ -1125,8 +1149,11 @@ const PendingPaymentContent = () => {
                                   Accept
                                 </button>
                                 {expenseAcceptModal && (
-        <ExpenseAcceptModal expenseId={expense.id} onClose={() => setExpenseAcceptModal(false)} />
-      )}
+                                  <ExpenseAcceptModal
+                                    expenseId={expense.id}
+                                    onClose={() => setExpenseAcceptModal(false)}
+                                  />
+                                )}
                                 <button
                                   className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline"
                                   onClick={() =>
@@ -1742,7 +1769,6 @@ const AllExpenseContent = () => {
           19,
           { align: "right" }
         ); // Add text aligned to the right
-          
 
         doc.autoTable(tableColumn, generateTableRows(pageExpenses), {
           startY: 30,
@@ -2026,9 +2052,9 @@ const PaymentHistoryContent = () => {
       );
     } else if (payment.status === "Accepted") {
       return (
-          <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline">
-            Accepted
-          </button>
+        <button className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline">
+          Accepted
+        </button>
       );
     } else if (payment.status === "Rejected") {
       return (
@@ -2869,127 +2895,136 @@ const UsersContent = ({ isAdmin }) => {
       groupedUsers[department] = [user];
     }
   });
-  
+
   const departmentsRef = ref(db, "departments");
 
   const [departments, setDepartments] = useState([]);
 
-// Fetch departments data
-useEffect(() => {
-  const departmentsRef = ref(db, "departments");
+  // Fetch departments data
+  useEffect(() => {
+    const departmentsRef = ref(db, "departments");
 
-  const fetchDepartments = async () => {
-    try {
-      const snapshot = await get(departmentsRef);
-      const departmentsData = snapshot.val();
-      const departmentsList = [];
+    const fetchDepartments = async () => {
+      try {
+        const snapshot = await get(departmentsRef);
+        const departmentsData = snapshot.val();
+        const departmentsList = [];
 
-      snapshot.forEach((childSnapshot) => {
-        const department = {
-          id: childSnapshot.key,
-          name: childSnapshot.val().name,
-          positions: [],
-        };
-
-        const positionsSnapshot = childSnapshot.child("positions");
-        positionsSnapshot.forEach((positionSnapshot) => {
-          const position = {
-            id: positionSnapshot.key,
-            name: positionSnapshot.val().name,
-            hierarchy: positionSnapshot.val().hierarchy,
+        snapshot.forEach((childSnapshot) => {
+          const department = {
+            id: childSnapshot.key,
+            name: childSnapshot.val().name,
+            positions: [],
           };
-          department.positions.push(position);
+
+          const positionsSnapshot = childSnapshot.child("positions");
+          positionsSnapshot.forEach((positionSnapshot) => {
+            const position = {
+              id: positionSnapshot.key,
+              name: positionSnapshot.val().name,
+              hierarchy: positionSnapshot.val().hierarchy,
+            };
+            department.positions.push(position);
+          });
+
+          departmentsList.push(department);
         });
 
-        departmentsList.push(department);
-      });
+        setDepartments(departmentsList);
+        const [departments, setDepartments] = useState([]);
 
-      setDepartments(departmentsList);const [departments, setDepartments] = useState([]);
+        // Fetch departments data
+        useEffect(() => {
+          const departmentsRef = ref(db, "departments");
 
-      // Fetch departments data
-      useEffect(() => {
-        const departmentsRef = ref(db, "departments");
-      
-        const fetchDepartments = async () => {
-          try {
-            const snapshot = await get(departmentsRef);
-            const departmentsData = snapshot.val();
-            const departmentsList = [];
-      
-            snapshot.forEach((childSnapshot) => {
-              const department = {
-                id: childSnapshot.key,
-                name: childSnapshot.val().name,
-                positions: [],
-              };
-      
-              const positionsSnapshot = childSnapshot.child("positions");
-              positionsSnapshot.forEach((positionSnapshot) => {
-                const position = {
-                  id: positionSnapshot.key,
-                  name: positionSnapshot.val().name,
-                  hierarchy: positionSnapshot.val().hierarchy,
+          const fetchDepartments = async () => {
+            try {
+              const snapshot = await get(departmentsRef);
+              const departmentsData = snapshot.val();
+              const departmentsList = [];
+
+              snapshot.forEach((childSnapshot) => {
+                const department = {
+                  id: childSnapshot.key,
+                  name: childSnapshot.val().name,
+                  positions: [],
                 };
-                department.positions.push(position);
+
+                const positionsSnapshot = childSnapshot.child("positions");
+                positionsSnapshot.forEach((positionSnapshot) => {
+                  const position = {
+                    id: positionSnapshot.key,
+                    name: positionSnapshot.val().name,
+                    hierarchy: positionSnapshot.val().hierarchy,
+                  };
+                  department.positions.push(position);
+                });
+
+                departmentsList.push(department);
               });
-      
-              departmentsList.push(department);
-            });
-      
-            setDepartments(departmentsList);
-          } catch (error) {
-            console.error("Error fetching departments:", error);
+
+              setDepartments(departmentsList);
+            } catch (error) {
+              console.error("Error fetching departments:", error);
+            }
+          };
+
+          fetchDepartments();
+        }, []);
+
+        const getHierarchy = (department, position) => {
+          const departmentData = departments.find((d) => d.name === department);
+          if (departmentData) {
+            const positionData = departmentData.positions.find(
+              (p) => p.name === position
+            );
+            if (positionData) {
+              return positionData.hierarchy;
+            }
           }
+          return -1; // Return a default value if hierarchy is not found
         };
-      
-        fetchDepartments();
-      }, []);
-      
-      const getHierarchy = (department, position) => {
-        const departmentData = departments.find((d) => d.name === department);
-        if (departmentData) {
-          const positionData = departmentData.positions.find((p) => p.name === position);
-          if (positionData) {
-            return positionData.hierarchy;
-          }
-        }
-        return -1; // Return a default value if hierarchy is not found
-      };
-      
-      // Iterate over departments in groupedUsers
-      Object.keys(groupedUsers).forEach((department) => {
-        groupedUsers[department] = groupedUsers[department].sort((a, b) => {
-          return getHierarchy(department, a.position) - getHierarchy(department, b.position);
+
+        // Iterate over departments in groupedUsers
+        Object.keys(groupedUsers).forEach((department) => {
+          groupedUsers[department] = groupedUsers[department].sort((a, b) => {
+            return (
+              getHierarchy(department, a.position) -
+              getHierarchy(department, b.position)
+            );
+          });
         });
-      });
-      
-    } catch (error) {
-      console.error("Error fetching departments:", error);
+      } catch (error) {
+        console.error("Error fetching departments:", error);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
+
+  const getHierarchy = (department, position) => {
+    const departmentData = departments.find((d) => d.name === department);
+    if (departmentData) {
+      const positionData = departmentData.positions.find(
+        (p) => p.name === position
+      );
+      if (positionData) {
+        return positionData.hierarchy;
+      }
     }
+    return -1; // Return a default value if hierarchy is not found
   };
 
-  fetchDepartments();
-}, []);
-
-const getHierarchy = (department, position) => {
-  const departmentData = departments.find((d) => d.name === department);
-  if (departmentData) {
-    const positionData = departmentData.positions.find((p) => p.name === position);
-    if (positionData) {
-      return positionData.hierarchy;
-    }
-  }
-  return -1; // Return a default value if hierarchy is not found
-};
-
-// Iterate over departments in groupedUsers
-Object.keys(groupedUsers).forEach((department) => {
-  groupedUsers[department] = groupedUsers[department].sort((a, b) => {
-    return getHierarchy(department, a.position) - getHierarchy(department, b.position);
+  // Iterate over departments in groupedUsers
+  Object.keys(groupedUsers).forEach((department) => {
+    groupedUsers[department] = groupedUsers[department].sort((a, b) => {
+      return (
+        getHierarchy(department, a.position) -
+        getHierarchy(department, b.position)
+      );
+    });
   });
-});
 
-  
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
       <h2 className="text-2xl text-white">Board Members</h2>
@@ -3282,12 +3317,11 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
 
   const getCashInHand = (paymentMethod) => {
     let cashInHand = 0;
-      const totalDeposit = calculateDepositTotal(paymentMethod);
-      const totalExpense = calculateExpenseTotal(paymentMethod);
-      cashInHand = totalDeposit - totalExpense;
+    const totalDeposit = calculateDepositTotal(paymentMethod);
+    const totalExpense = calculateExpenseTotal(paymentMethod);
+    cashInHand = totalDeposit - totalExpense;
     return cashInHand;
   };
-  
 
   const fetchDefaulters = (payments) => {
     const defaulters = {};
@@ -3405,8 +3439,6 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
     return filteredPayments;
   };
 
-  
-
   const [showModal, setShowModal] = useState(false);
 
   const MyModal = () => {
@@ -3507,104 +3539,108 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
     }
   };
 
-const handleDepositPDFDownload = () => {
-  // Create a new jsPDF instance
-  const doc = new jsPDF();
+  const handleDepositPDFDownload = () => {
+    // Create a new jsPDF instance
+    const doc = new jsPDF();
 
-  // Define table column headers
-  const tableColumn = [
-    "Month & Year",
-    ...allPaymentMethods.map((paymentMethod) => paymentMethod.name),
-    "Total"
-  ];
-
-  // Define table rows
-  const tableRows = Object.entries(monthlyDeposit).map(([key, paymentMethods]) => {
-    const [month, year] = key.split("-");
-    const rowData = [
-      `${month} ${year}`,
-      ...allPaymentMethods.map((paymentMethod) => paymentMethods[paymentMethod.name] || 0),
-      paymentMethods.total || 0
+    // Define table column headers
+    const tableColumn = [
+      "Month & Year",
+      ...allPaymentMethods.map((paymentMethod) => paymentMethod.name),
+      "Total",
     ];
-    return rowData;
-  });
 
-  // Add table to the document
-  doc.autoTable({
-    head: [tableColumn],
-    body: tableRows,
-  });
+    // Define table rows
+    const tableRows = Object.entries(monthlyDeposit).map(
+      ([key, paymentMethods]) => {
+        const [month, year] = key.split("-");
+        const rowData = [
+          `${month} ${year}`,
+          ...allPaymentMethods.map(
+            (paymentMethod) => paymentMethods[paymentMethod.name] || 0
+          ),
+          paymentMethods.total || 0,
+        ];
+        return rowData;
+      }
+    );
 
-  // Save the PDF with a unique name
-  doc.save(`JUKTI-Funds-deposit-report-${new Date().getTime()}.pdf`);
-};
+    // Add table to the document
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+    });
 
-const handleExpensePDFDownload = () => {
-  // Create a new jsPDF instance
-  const doc = new jsPDF();
+    // Save the PDF with a unique name
+    doc.save(`JUKTI-Funds-deposit-report-${new Date().getTime()}.pdf`);
+  };
 
-  // Define table column headers
-  const tableColumn = [
-    "Month & Year",
-    ...allPaymentMethods.map((paymentMethod) => paymentMethod.name),
-    "Total"
-  ];
+  const handleExpensePDFDownload = () => {
+    // Create a new jsPDF instance
+    const doc = new jsPDF();
 
-  // Define table rows
-  const tableRows = Object.entries(monthlyExpense).map(([key, paymentMethods]) => {
-    const [month, year] = key.split("-");
-    const rowData = [
-      `${month} ${year}`,
-      ...allPaymentMethods.map((paymentMethod) => paymentMethods[paymentMethod.name] || 0),
-      paymentMethods.total || 0
+    // Define table column headers
+    const tableColumn = [
+      "Month & Year",
+      ...allPaymentMethods.map((paymentMethod) => paymentMethod.name),
+      "Total",
     ];
-    return rowData;
-  });
 
-  // Add table to the document
-  doc.autoTable({
-    head: [tableColumn],
-    body: tableRows,
-  });
+    // Define table rows
+    const tableRows = Object.entries(monthlyExpense).map(
+      ([key, paymentMethods]) => {
+        const [month, year] = key.split("-");
+        const rowData = [
+          `${month} ${year}`,
+          ...allPaymentMethods.map(
+            (paymentMethod) => paymentMethods[paymentMethod.name] || 0
+          ),
+          paymentMethods.total || 0,
+        ];
+        return rowData;
+      }
+    );
 
-  // Save the PDF with a unique name
-  doc.save(`JUKTI-Funds-expense-report-${new Date().getTime()}.pdf`);
-};
+    // Add table to the document
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+    });
 
-const handleDefaulterPDFDownload = () => {
-  // Create a new jsPDF instance
-  const doc = new jsPDF();
+    // Save the PDF with a unique name
+    doc.save(`JUKTI-Funds-expense-report-${new Date().getTime()}.pdf`);
+  };
 
-  // Define table column headers
-  const tableColumn = [
-    "Month & Year",
-    "Name",
-    "Position",
-    "Department",
-  ];
+  const handleDefaulterPDFDownload = () => {
+    // Create a new jsPDF instance
+    const doc = new jsPDF();
 
-  // Define table rows
-  const tableRows = Object.entries(defaulters).map(([key, defaultersList]) => {
-    const [month, year] = key.split("-");
-    const rowData = defaultersList.map((defaulter) => [
-      `${month} ${year}`,
-      defaulter.name,
-      defaulter.position,
-      defaulter.department,
-    ]);
-    return rowData;
-  }).flat();
+    // Define table column headers
+    const tableColumn = ["Month & Year", "Name", "Position", "Department"];
 
-  // Add table to the document
-  doc.autoTable({
-    head: [tableColumn],
-    body: tableRows,
-  });
+    // Define table rows
+    const tableRows = Object.entries(defaulters)
+      .map(([key, defaultersList]) => {
+        const [month, year] = key.split("-");
+        const rowData = defaultersList.map((defaulter) => [
+          `${month} ${year}`,
+          defaulter.name,
+          defaulter.position,
+          defaulter.department,
+        ]);
+        return rowData;
+      })
+      .flat();
 
-  // Save the PDF with a unique name
-  doc.save(`JUKTI-Funds-defaulters-report-${new Date().getTime()}.pdf`);
-};
+    // Add table to the document
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+    });
 
+    // Save the PDF with a unique name
+    doc.save(`JUKTI-Funds-defaulters-report-${new Date().getTime()}.pdf`);
+  };
 
   return (
     <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
@@ -3725,7 +3761,10 @@ const handleDefaulterPDFDownload = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-8">
-                      <button className="flex items-center bg-transparent text-jukti-orange" onClick={handleDepositPDFDownload}>
+                      <button
+                        className="flex items-center bg-transparent text-jukti-orange"
+                        onClick={handleDepositPDFDownload}
+                      >
                         <FontAwesomeIcon
                           icon={faFilePdf}
                           className="m-2 w-8 h-8"
@@ -3858,7 +3897,10 @@ const handleDefaulterPDFDownload = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-8">
-                      <button className="flex items-center bg-transparent text-jukti-orange" onClick={handleExpensePDFDownload}>
+                      <button
+                        className="flex items-center bg-transparent text-jukti-orange"
+                        onClick={handleExpensePDFDownload}
+                      >
                         <FontAwesomeIcon
                           icon={faFilePdf}
                           className="m-2 w-8 h-8"
@@ -3906,7 +3948,7 @@ const handleDefaulterPDFDownload = () => {
                                     </td>
                                   ))}
                                   <td className="text-white py-2 px-4 border-b">
-                                    {paymentMethods.total||0}
+                                    {paymentMethods.total || 0}
                                   </td>
                                 </tr>
                               );
@@ -3992,7 +4034,10 @@ const handleDefaulterPDFDownload = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-8">
-                      <button className="flex items-center bg-transparent text-jukti-orange" onClick={handleDefaulterPDFDownload}>
+                      <button
+                        className="flex items-center bg-transparent text-jukti-orange"
+                        onClick={handleDefaulterPDFDownload}
+                      >
                         <FontAwesomeIcon
                           icon={faFilePdf}
                           className="m-2 w-8 h-8"
@@ -4921,6 +4966,320 @@ const RecordExpenseContent = () => {
             type="submit"
           >
             Record Expense
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
+const ReceivedFundsContent = () => {
+  const [duplicate, setDuplicate] = useState(false);
+  const [trxDuplicate, setTrxDuplicate] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState([]);
+
+  const [paymentData, setPaymentData] = useState({
+    date: "",
+    payer: "",
+    title: "",
+    description: "",
+    paymentMethod: "",
+    number: "",
+    transactionId: "",
+    amount: "",
+    status: "Pending",
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setPaymentData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+
+    if (duplicate) {
+      alert("Funds for this month already received.");
+    } else if (trxDuplicate) {
+      alert("Transaction ID already exists.");
+    } else {
+      // Save paymentData to the database
+      savePaymentData(paymentData);
+      // Reset the form
+      setPaymentData({
+        date: "",
+        payer: "",
+        title: "",
+        description: "",
+        paymentMethod: "",
+        number: "",
+        transactionId: "",
+        amount: "",
+        status: "Pending",
+      });
+    }
+  };
+
+  useEffect(() => {
+    const paymentMethodsRef = ref(db, "paymentMethods");
+    onValue(paymentMethodsRef, (snapshot) => {
+      const paymentMethodsData = snapshot.val();
+      const paymentMethodsList = [];
+      snapshot.forEach((childSnapshot) => {
+        const paymentMethod = {
+          id: childSnapshot.key,
+          name: childSnapshot.val().name,
+          description: childSnapshot.val().description,
+        };
+        paymentMethodsList.push(paymentMethod);
+      });
+      setPaymentMethods(paymentMethodsList);
+    });
+  }, []);
+
+  const savePaymentData = (paymentData) => {
+    const paymentsRef = ref(db, "receivedFunds");
+    push(paymentsRef, {
+      ...paymentData,
+      email: jsCookie.get("userEmail"),
+    });
+  };
+
+  const [showModal, setShowModal] = useState(false);
+
+  const MyModal = () => {
+    return (
+      <div
+        className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-75"
+        style={{ zIndex: 1000 }}
+      >
+        <div className="max-w-6xl max-h-screen grid w-screen grid-cols-1 bg-gray-900 rounded-lg p-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl text-white px-4 py-2 rounded-t-lg">
+              Payment Methods
+            </h2>
+            <button
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline inline-block ml-4"
+              onClick={() => setShowModal(false)}
+            >
+              Close
+            </button>
+          </div>
+          <div className="max-h-[calc(100vh-128px)] overflow-y-auto">
+            {paymentMethods.length > 0 ? (
+              paymentMethods.map((paymentMethod) => (
+                <div key={paymentMethod.id} className="">
+                  <Disclosure className="">
+                    {({ open }) => (
+                      <>
+                        <Disclosure.Button className="flex justify-between w-full px-4 py-2 my-4 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                          <h3 className="text-xl">{paymentMethod.name}</h3>
+                        </Disclosure.Button>
+                        <Transition
+                          enter="transition duration-200 ease-out"
+                          enterFrom="opacity-0"
+                          enterTo="opacity-100"
+                          leave="transition duration-150 ease-out"
+                          leaveFrom="opacity-100"
+                          leaveTo="opacity-0"
+                        >
+                          <Disclosure.Panel className="px-4 pt-4 pb-2 text-white text-lg bg-gray-800 rounded-lg">
+                            <div
+                              className="formatted-text"
+                              style={{ whiteSpace: "pre-wrap" }}
+                              dangerouslySetInnerHTML={{
+                                __html: paymentMethod.description,
+                              }}
+                            ></div>
+                          </Disclosure.Panel>
+                        </Transition>
+                      </>
+                    )}
+                  </Disclosure>
+                </div>
+              ))
+            ) : (
+              <p className="text-white">No payment methods found.</p>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="max-w-6xl grid w-screen grid-cols-1 pr-8">
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl text-white">Record Received Funds</h2>
+        <button
+          className="bg-jukti-orange hover:bg-jukti-orange-dark text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline inline-block ml-4"
+          onClick={() => setShowModal(true)}
+        >
+          Payment Methods
+        </button>
+        {showModal && <MyModal />}
+      </div>
+      <form
+        className="gap-4 py-16 justify-start rounded-lg"
+        onSubmit={handleFormSubmit}
+      >
+        <div className="grid grid-cols-2 justify-between gap-4">
+          <div className="mb-4">
+            <label
+              className="block text-gray-300 text-sm font-bold mb-2"
+              htmlFor="date"
+            >
+              Payment Date
+            </label>
+            <input
+              className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+              type="date"
+              name="date"
+              id="date"
+              value={paymentData.date}
+              onChange={handleChange}
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label
+              className="block text-gray-300 text-sm font-bold mb-2"
+              htmlFor="payer"
+            >
+              Payer
+            </label>
+            <input
+              className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+              type="text"
+              name="payer"
+              id="payer"
+              placeholder="Name of the payer"
+              value={paymentData.payer}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-300 text-sm font-bold mb-2"
+            htmlFor="title"
+          >
+            Title
+          </label>
+          <input
+            className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+            type="text"
+            name="title"
+            id="title"
+            placeholder="Purpose of the fund received"
+            value={paymentData.title}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-300 text-sm font-bold mb-2"
+            htmlFor="description"
+          >
+            Description
+          </label>
+          <textarea
+            className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+            name="description"
+            id="description"
+            placeholder="Description (optional)"
+            value={paymentData.description}
+            onChange={handleChange}
+          ></textarea>
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-300 text-sm font-bold mb-2"
+            htmlFor="paymentMethod"
+          >
+            Payment Method
+          </label>
+          <select
+            className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+            name="paymentMethod"
+            id="paymentMethod"
+            value={paymentData.paymentMethod}
+            onChange={handleChange}
+            required
+          >
+            <option value="">Select Payment Method</option>
+            {paymentMethods.map((paymentMethod) => (
+              <option key={paymentMethod.id} value={paymentMethod.name}>
+                {paymentMethod.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-300 text-sm font-bold mb-2"
+            htmlFor="number"
+          >
+            Number
+          </label>
+          <input
+            className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+            type="text"
+            name="number"
+            id="number"
+            placeholder="Account Number / Mobile Number"
+            value={paymentData.number}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-300 text-sm font-bold mb-2"
+            htmlFor="transactionId"
+          >
+            Transaction ID
+          </label>
+          <input
+            className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+            type="text"
+            name="transactionId"
+            id="transactionId"
+            placeholder="Last 5 Digits of Transaction ID"
+            value={paymentData.transactionId}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="mb-4">
+          <label
+            className="block text-gray-300 text-sm font-bold mb-2"
+            htmlFor="amount"
+          >
+            Amount
+          </label>
+          <input
+            className="appearance-none bg-gray-700 border rounded w-full py-2 px-3 text-white leading-tight focus:outline-none focus:shadow-outline"
+            type="text"
+            name="amount"
+            id="amount"
+            placeholder="Amount Paid"
+            value={paymentData.amount}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div>
+          <button
+            className="w-full bg-jukti-orange hover:bg-jukti-orange-dark text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            type="submit"
+          >
+            Record Received Funds
           </button>
         </div>
       </form>
