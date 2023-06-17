@@ -4765,6 +4765,7 @@ const RecordExpenseContent = () => {
       fileUrl: await handleFileUpload(expenseFile),
     };
     await createExpense(expense);
+    resetForm();
   };
 
   const handleFileUpload = async (file) => {
@@ -4781,7 +4782,6 @@ const RecordExpenseContent = () => {
         return null;
       }
     }
-    return null;
   };
 
   const createExpense = async (expense) => {
@@ -4816,7 +4816,7 @@ const RecordExpenseContent = () => {
   };
 
   const resetForm = () => {
-    setExpenseName("");
+    setExpenseTitle("");
     setExpenseAmount("");
     setExpenseDate("");
     setExpenseDetails("");
