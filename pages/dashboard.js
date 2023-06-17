@@ -40,6 +40,8 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import Link from "next/link";
+import {ToastContainer , toast} from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css'
 
 const localizer = momentLocalizer(moment);
 
@@ -128,7 +130,7 @@ const Dashboard = () => {
       fetchUserIsAdmin(email);
     } catch (error) {
       // Handle any errors that occur during fetching user data
-      alert("Error fetching user data:", error);
+      toast.error("Error fetching user data:", error);
     }
 
     // Listen to changes in authentication state
@@ -155,7 +157,8 @@ const Dashboard = () => {
           router.push("/login"); // Redirect to the login page
         })
         .catch((error) => {
-          alert("Error logging out:", error);
+          // Handle logout errors
+          toast.error("Error logging out:", error);
         });
     }
 
@@ -356,6 +359,7 @@ const Dashboard = () => {
             {selectedMenu === "pendingpayment" && <PendingPaymentContent />}
             {selectedMenu === "allexpense" && <AllExpenseContent />}
           </div>
+          <ToastContainer />
         </div>
       </Layout>
     );
@@ -390,9 +394,9 @@ const PaymentContent = () => {
     e.preventDefault();
 
     if (duplicate) {
-      alert("Payment for this month already done.");
+      toast.error("Payment for this month already done.");
     } else if (trxDuplicate) {
-      alert("Transaction ID already exists.");
+      toast.error("Transaction ID already exists.");
     } else {
       // Save paymentData to the database
       savePaymentData(paymentData);
@@ -2305,7 +2309,7 @@ const ProfileContent = () => {
   const updateUser = (updatedUser) => {
     const userRef = ref(db, `users/${updatedUser.id}`);
     update(userRef, updatedUser).catch((error) => {
-      alert("Error updating user in the database:", error);
+      toast.error("Error updating user in the database:", error);
     });
   };
 
@@ -2334,7 +2338,7 @@ const ProfileContent = () => {
     e.preventDefault();
 
     if (newPassword !== confirmPassword) {
-      alert("Passwords don't match.");
+      toast.error("Passwords don't match.");
       return;
     }
 
@@ -2343,7 +2347,7 @@ const ProfileContent = () => {
       setNewPassword("");
       setConfirmPassword("");
     } catch (error) {
-      alert("Error updating password:", error.message);
+      toast.error("Error updating password:", error.message);
     }
   };
 
@@ -3528,14 +3532,14 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
       });
 
       if (response.ok) {
-        alert("Emails sent successfully");
+        toast.success("Emails sent successfully");
       } else {
         const errorData = await response.json();
         throw new Error(errorData.message || "Error sending emails");
       }
     } catch (error) {
       console.error("Error sending emails:", error);
-      alert("Error sending emails. Please try again later.");
+      toast.error("Error sending emails. Please try again later.");
     }
   };
 
@@ -4151,7 +4155,7 @@ const CalenderContent = ({ department, isAdmin }) => {
     e.preventDefault();
 
     if (!eventName || !eventStartDateTime || !eventEndDateTime || !eventType) {
-      alert("Please enter event name, start time, end time, and type.");
+      toast.info("Please enter event name, start time, end time, and type.");
       return;
     }
 
@@ -4305,7 +4309,7 @@ const CalenderContent = ({ department, isAdmin }) => {
         !editedEventEndDateTime ||
         !editedEventType
       ) {
-        alert("Please enter event name, start time, end time, and type.");
+        toast.info("Please enter event name, start time, end time, and type.");
         return;
       }
 
@@ -4809,7 +4813,7 @@ const RecordExpenseContent = () => {
     ) {
       setExpenseFile(file);
     } else {
-      alert("Upload png or jpg/jpeg or pdf files only!");
+      toast.error("Upload png or jpg/jpeg or pdf files only!");
       setExpenseFile(null);
       fileInputRef.current.value = null;
     }
@@ -4974,7 +4978,6 @@ const RecordExpenseContent = () => {
 };
 
 const ReceivedFundsContent = () => {
-  const [duplicate, setDuplicate] = useState(false);
   const [trxDuplicate, setTrxDuplicate] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState([]);
 
@@ -5000,11 +5003,8 @@ const ReceivedFundsContent = () => {
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
-
-    if (duplicate) {
-      alert("Funds for this month already received.");
-    } else if (trxDuplicate) {
-      alert("Transaction ID already exists.");
+    if (trxDuplicate) {
+      toast.error("Transaction ID already exists.");
     } else {
       // Save paymentData to the database
       savePaymentData(paymentData);
@@ -5021,6 +5021,25 @@ const ReceivedFundsContent = () => {
         status: "Pending",
       });
     }
+  };
+
+  const checkDuplicate = (transactionId) => {
+    const receivedFundsRef = ref(db, "receivedFunds");
+    onValue(receivedFundsRef, (snapshot) => {
+      const receivedFundsData = snapshot.val();
+      const receivedFundsList = [];
+      snapshot.forEach((childSnapshot) => {
+        const receivedFund = {
+          id: childSnapshot.key,
+          transactionId: childSnapshot.val().transactionId,
+        };
+        receivedFundsList.push(receivedFund);
+      });
+      const duplicate = receivedFundsList.some(
+        (receivedFund) => receivedFund.transactionId === transactionId
+      );
+      setTrxDuplicate(duplicate);
+    });
   };
 
   useEffect(() => {
