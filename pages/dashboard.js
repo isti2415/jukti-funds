@@ -874,6 +874,75 @@ const PendingPaymentContent = () => {
     return user ? user : null;
   };
 
+  const [pendingReceivedFunds, setPendingReceivedFunds] = useState([]);
+
+  useEffect(() => {
+    const paymentsRef = ref(db, "receivedFunds");
+    const paymentsListener = onValue(paymentsRef, fetchPendingReceivedFunds);
+
+    return () => {
+      off(paymentsRef, "value", paymentsListener);
+    };
+  }, []);
+
+  const fetchPendingReceivedFunds = (snapshot) => {
+    if (snapshot.exists()) {
+      const paymentsData = snapshot.val();
+      const pendingReceivedFunds = Object.entries(paymentsData)
+        .filter(([_, payment]) => payment.status === "Pending")
+        .map(([id, payment]) => ({ id, ...payment }));
+      setPendingReceivedFunds(pendingReceivedFunds);
+    } else {
+      setPendingReceivedFunds([]);
+    }
+  };
+
+  const handleReceivedFundsAccept = (paymentId) => {
+    const paymentRef = ref(db, `receivedFunds/${paymentId}`);
+    update(paymentRef, { status: "Accepted" })
+      .then(() => {
+        const updatedPayments = pendingReceivedFunds.map((payment) => {
+          if (payment.id === paymentId) {
+            return {
+              ...payment,
+              status: "Accepted",
+            };
+          }
+          return payment;
+        });
+        const payments = updatedPayments.filter(
+          (payment) => payment.id !== paymentId
+        );
+        setPendingReceivedFunds(payments);
+      })
+      .catch((error) => {
+        console.log("Error accepting payment:", error);
+      });
+  };
+
+  const handleReceivedFundsReject = (paymentId) => {
+    const paymentRef = ref(db, `receivedFunds/${paymentId}`);
+    update(paymentRef, { status: "Rejected" })
+      .then(() => {
+        const updatedPayments = pendingReceivedFunds.map((payment) => {
+          if (payment.id === paymentId) {
+            return {
+              ...payment,
+              status: "Rejected",
+            };
+          }
+          return payment;
+        });
+        const payments = updatedPayments.filter(
+          (payment) => payment.id !== paymentId
+        );
+        setPendingReceivedFunds(payments);
+      })
+      .catch((error) => {
+        console.log("Error rejecting payment:", error);
+      });
+  };
+
   const [expenseAcceptModal, setExpenseAcceptModal] = useState(false);
 
   const ExpenseAcceptModal = ({ expenseId, onClose }) => {
@@ -1024,6 +1093,115 @@ const PendingPaymentContent = () => {
                                   className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline"
                                   onClick={() =>
                                     handleDepositReject(payment.id)
+                                  }
+                                >
+                                  Reject
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-white">No Pending Requests found.</p>
+                )}
+              </Disclosure.Panel>
+            </Transition>
+          </>
+        )}
+      </Disclosure>
+      <Disclosure>
+        {({ open }) => (
+          <>
+            <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+              <span className="text-lg">Pending Received Funds</span>
+              <ChevronDownIcon
+                className={`${
+                  open ? "transform rotate-180" : ""
+                } w-5 h-5 text-white`}
+              />
+            </Disclosure.Button>
+            <Transition
+              show={open}
+              enter="transition duration-100 ease-out"
+              enterFrom="transform scale-95 opacity-0"
+              enterTo="transform scale-100 opacity-100"
+              leave="transition duration-75 ease-out"
+              leaveFrom="transform scale-100 opacity-100"
+              leaveTo="transform scale-95 opacity-0"
+            >
+              <Disclosure.Panel className="px-4 pb-2 text-sm text-gray-500">
+                {pendingReceivedFunds.length > 0 ? (
+                  <div className="overflow-x-auto bg-gray-800 p-2 rounded-xl">
+                    <div className="w-full">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              User
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Payment Method
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Number
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Transaction ID
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Date
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Amount
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Payer
+                            </th>
+                            <th className="text-gray-300 text-center py-2 px-2 border-b">
+                              Actions
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pendingReceivedFunds.map((payment) => (
+                            <tr key={payment.id}>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.email}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.paymentMethod}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.number}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.transactionId}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.date}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.amount} BDT
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                {payment.payer}
+                              </td>
+                              <td className="text-white py-2 px-2 border-b">
+                                <button
+                                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline mr-2 mb-2"
+                                  onClick={() =>
+                                    handleReceivedFundsAccept(payment.id)
+                                  }
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  className="bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-3 rounded focus:outline-none focus:shadow-outline"
+                                  onClick={() =>
+                                    handleReceivedFundsReject(payment.id)
                                   }
                                 >
                                   Reject
@@ -3134,6 +3312,9 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
   const currentDate = new Date();
   const [monthlyDeposit, setMonthlyDeposit] = useState({});
   const [monthlyExpense, setMonthlyExpense] = useState({});
+  const [monthlyReceivedFunds, setMonthlyReceivedFunds] = useState({});
+  const [selectedReceivedFundsMonth, setSelectedReceivedFundsMonth] = useState("");
+  const [selectedReceivedFundsYear, setSelectedReceivedFundsYear] = useState("");
   const [selectedDepositMonth, setSelectedDepositMonth] = useState("");
   const [selectedDepositYear, setSelectedDepositYear] = useState("");
   const [selectedExpenseMonth, setSelectedExpenseMonth] = useState("");
@@ -3216,6 +3397,80 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
 
     fetchExpenseData();
   }, [selectedExpenseMonth, selectedExpenseYear]);
+
+  useEffect(() => {
+    const fetchReceivedFundsData = () => {
+      const receivedFundsRef = ref(db, "receivedFunds");
+
+      onValue(receivedFundsRef, (snapshot) => {
+        if (snapshot.exists()) {
+          const receivedFundsData = snapshot.val();
+          const receivedFunds = Object.values(receivedFundsData);
+          const summary = calculateMonthlyReceivedFunds(
+            applyReceivedFundsFilters(receivedFunds)
+          );
+          setMonthlyReceivedFunds(summary);
+        } else {
+          setMonthlyReceivedFunds({});
+        }
+      });
+    };
+
+    fetchReceivedFundsData();
+  }, [selectedReceivedFundsMonth, selectedReceivedFundsYear]);
+
+  const calculateMonthlyReceivedFunds = (receivedFunds) => {
+    const funds = {};
+
+    for (const receivedFund of receivedFunds) {
+      const { date, amount, paymentMethod } = receivedFund;
+      const [year, month] = date.split("-");
+      const monthName = new Date(date).toLocaleString("en-US", {
+        month: "long",
+      });
+      const key = `${monthName}-${year}`;
+
+      if (funds[key]) {
+        if (funds[key][paymentMethod]) {
+          funds[key][paymentMethod] += parseFloat(amount);
+        } else {
+          funds[key][paymentMethod] = parseFloat(amount);
+        }
+      } else {
+        funds[key] = {
+          [paymentMethod]: parseFloat(amount),
+        };
+      }
+    }
+
+    // Calculate the total for each payment method
+    for (const key in funds) {
+      const paymentMethods = funds[key];
+      let total = 0;
+      for (const method in paymentMethods) {
+        if (method !== "total") {
+          total += paymentMethods[method];
+        }
+      }
+      paymentMethods.total = total;
+    }
+
+    return funds;
+  };
+
+  const calculateReceivedFundsTotal = (paymentMethod) => {
+    let grandTotal = 0;
+
+    for (const key in monthlyReceivedFunds) {
+      const paymentMethods = monthlyReceivedFunds[key];
+      if (paymentMethods[paymentMethod]) {
+        grandTotal += paymentMethods[paymentMethod];
+      }
+    }
+
+    return grandTotal;
+  };
+
 
   const calculateMonthlyDeposit = (payments) => {
     const deposit = {};
@@ -3323,7 +3578,8 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
     let cashInHand = 0;
     const totalDeposit = calculateDepositTotal(paymentMethod);
     const totalExpense = calculateExpenseTotal(paymentMethod);
-    cashInHand = totalDeposit - totalExpense;
+    const totalReceivedFunds = calculateReceivedFundsTotal(paymentMethod);
+    cashInHand = totalDeposit + totalReceivedFunds - totalExpense;
     return cashInHand;
   };
 
@@ -3401,6 +3657,32 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
         (payment) => payment.year === selectedDepositYear
       );
     }
+    return filteredPayments;
+  };
+
+  const applyReceivedFundsFilters = (payments) => {
+    let filteredPayments = [...payments];
+    filteredPayments = filteredPayments.filter(
+      (payment) => payment.status === "Accepted"
+    );
+
+    if (selectedReceivedFundsMonth !== "") {
+      filteredPayments = filteredPayments.filter((payment) => {
+        const [year, month] = payment.date.split("-");
+        const monthName = new Date(payment.date).toLocaleString("en-US", {
+          month: "long",
+        });
+        return monthName === selectedReceivedFundsMonth;
+      });
+    }
+
+    if (selectedReceivedFundsYear !== "") {
+      filteredPayments = filteredPayments.filter((payment) => {
+        const [year, month] = payment.date.split("-");
+        return year === selectedReceivedFundsYear;
+      });
+    }
+
     return filteredPayments;
   };
 
@@ -3569,14 +3851,82 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
       }
     );
 
+    doc.addImage("jukti.png", "PNG", 10, 8, 33, 19); // Add JUKTI logo on the left
+        doc.setFontSize(12);
+        doc.text(
+          "Monthly Deposit Records",
+          doc.internal.pageSize.getWidth() - 118,
+          19,
+          { align: "right" }
+        ); // Add text aligned to the right
+        doc.text(
+          "Date: " + moment(new Date()).format("MMMM DD YYYY"),
+          doc.internal.pageSize.getWidth() - 10,
+          19,
+          { align: "right" }
+        ); // Add text aligned to the right
+
     // Add table to the document
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
+      startY: 30,
     });
 
     // Save the PDF with a unique name
     doc.save(`JUKTI-Funds-deposit-report-${new Date().getTime()}.pdf`);
+  };
+
+  const handleReceivedFundsPDFDownload = () => {
+    // Create a new jsPDF instance
+    const doc = new jsPDF();
+
+    // Define table column headers
+    const tableColumn = [
+      "Month & Year",
+      ...allPaymentMethods.map((paymentMethod) => paymentMethod.name),
+      "Total",
+    ];
+
+    // Define table rows
+    const tableRows = Object.entries(monthlyReceivedFunds).map(
+      ([key, paymentMethods]) => {
+        const [month, year] = key.split("-");
+        const rowData = [
+          `${month} ${year}`,
+          ...allPaymentMethods.map(
+            (paymentMethod) => paymentMethods[paymentMethod.name] || 0
+          ),
+          paymentMethods.total || 0,
+        ];
+        return rowData;
+      }
+    );
+
+    doc.addImage("jukti.png", "PNG", 10, 8, 33, 19); // Add JUKTI logo on the left
+        doc.setFontSize(12);
+        doc.text(
+          "Monthly Received Funds Records",
+          doc.internal.pageSize.getWidth() - 102,
+          19,
+          { align: "right" }
+        ); // Add text aligned to the right
+        doc.text(
+          "Date: " + moment(new Date()).format("MMMM DD YYYY"),
+          doc.internal.pageSize.getWidth() - 10,
+          19,
+          { align: "right" }
+        ); // Add text aligned to the right
+
+    // Add table to the document
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 30,
+    });
+
+    // Save the PDF with a unique name
+    doc.save(`JUKTI-Funds-received-funds-report-${new Date().getTime()}.pdf`);
   };
 
   const handleExpensePDFDownload = () => {
@@ -3605,10 +3955,26 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
       }
     );
 
+    doc.addImage("jukti.png", "PNG", 10, 8, 33, 19); // Add JUKTI logo on the left
+        doc.setFontSize(12);
+        doc.text(
+          "Monthly Expense Records",
+          doc.internal.pageSize.getWidth() - 118,
+          19,
+          { align: "right" }
+        ); // Add text aligned to the right
+        doc.text(
+          "Date: " + moment(new Date()).format("MMMM DD YYYY"),
+          doc.internal.pageSize.getWidth() - 10,
+          19,
+          { align: "right" }
+        ); // Add text aligned to the right
+
     // Add table to the document
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
+      startY: 30,
     });
 
     // Save the PDF with a unique name
@@ -3636,10 +4002,26 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
       })
       .flat();
 
+      doc.addImage("jukti.png", "PNG", 10, 8, 33, 19); // Add JUKTI logo on the left
+        doc.setFontSize(12);
+        doc.text(
+          "Monthly Defaulter Records",
+          doc.internal.pageSize.getWidth() - 118,
+          19,
+          { align: "right" }
+        ); // Add text aligned to the right
+        doc.text(
+          "Date: " + moment(new Date()).format("MMMM DD YYYY"),
+          doc.internal.pageSize.getWidth() - 10,
+          19,
+          { align: "right" }
+        ); // Add text aligned to the right
+
     // Add table to the document
     doc.autoTable({
       head: [tableColumn],
       body: tableRows,
+      startY: 30,
     });
 
     // Save the PDF with a unique name
@@ -3836,6 +4218,136 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
                             ))}
                             <td className="text-jukti-orange py-2 px-4 border-b">
                               {calculateDepositTotal("total")}
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </Disclosure.Panel>
+              </Transition>
+            </>
+          )}
+        </Disclosure>
+        <Disclosure>
+          {({ open }) => (
+            <>
+              <Disclosure.Button className="flex justify-between w-full px-4 py-2 text-sm font-medium text-left text-white bg-gray-800 rounded-lg hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-gray-500 focus-visible:ring-opacity-75">
+                <h2 className="text-white text-xl">Monthly Received Funds</h2>
+                <ChevronDownIcon
+                  className={`${
+                    open ? "transform rotate-180" : ""
+                  } w-5 h-5 text-white`}
+                />
+              </Disclosure.Button>
+              <Transition
+                enter="transition duration-200 ease-out"
+                enterFrom="opacity-0"
+                enterTo="opacity-100"
+                leave="transition duration-150 ease-out"
+                leaveFrom="opacity-100"
+                leaveTo="opacity-0"
+              >
+                <Disclosure.Panel className="px-4 pt-4 pb-2 text-sm text-white">
+                  <div className="flex flex-wrap justify-between items-center mb-4">
+                    <div className="flex flex-wrap">
+                      <div className="mr-4">
+                        <label htmlFor="month" className="block text-white">
+                          Month:
+                        </label>
+                        <select
+                          id="month"
+                          value={selectedReceivedFundsMonth}
+                          onChange={(e) =>
+                            setSelectedReceivedFundsMonth(e.target.value)
+                          }
+                          className="px-4 py-2 border text-black border-gray-300 rounded-md focus:outline-none"
+                        >
+                          {getMonthOptions()}
+                        </select>
+                      </div>
+                      <div className="mr-4">
+                        <label htmlFor="year" className="block text-white">
+                          Year:
+                        </label>
+                        <select
+                          id="year"
+                          value={selectedReceivedFundsYear}
+                          onChange={(e) =>
+                            setSelectedReceivedFundsYear(e.target.value)
+                          }
+                          className="px-4 py-2 border text-black border-gray-300 rounded-md focus:outline-none"
+                        >
+                          {getYearOptions()}
+                        </select>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-8">
+                      <button
+                        className="flex items-center bg-transparent text-jukti-orange"
+                        onClick={handleReceivedFundsPDFDownload}
+                      >
+                        <FontAwesomeIcon
+                          icon={faFilePdf}
+                          className="m-2 w-8 h-8"
+                        />
+                        <span>Download PDF</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="overflow-x-auto bg-gray-800 p-4 rounded-xl">
+                    <div className="w-full">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Month & Year
+                            </th>
+                            {allPaymentMethods.map((paymentMethod) => (
+                              <th
+                                className="text-gray-300 text-left py-2 px-4 border-b"
+                                key={paymentMethod.name}
+                              >
+                                {paymentMethod.name}
+                              </th>
+                            ))}
+                            <th className="text-gray-300 text-left py-2 px-4 border-b">
+                              Total
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(monthlyReceivedFunds).map(
+                            ([key, paymentMethods]) => {
+                              const [month, year] = key.split("-");
+                              return (
+                                <tr key={key}>
+                                  <td className="text-white py-2 px-4 border-b">
+                                    {month} {year}
+                                  </td>
+                                  {allPaymentMethods.map((paymentMethod) => (
+                                    <td className="text-white py-2 px-4 border-b">
+                                      {paymentMethods[paymentMethod.name] || 0}
+                                    </td>
+                                  ))}
+                                  <td className="text-white py-2 px-4 border-b">
+                                    {paymentMethods.total || 0}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                          )}
+                          <tr>
+                            <td className="text-jukti-orange py-2 px-4 border-b">
+                              Grand Total
+                            </td>
+                            {allPaymentMethods.map((paymentMethod) => (
+                              <td className="text-jukti-orange py-2 px-4 border-b">
+                                {calculateReceivedFundsTotal(paymentMethod.name)}
+                              </td>
+                            ))}
+                            <td className="text-jukti-orange py-2 px-4 border-b">
+                              {calculateReceivedFundsTotal("total")}
                             </td>
                           </tr>
                         </tbody>
