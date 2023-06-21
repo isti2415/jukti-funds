@@ -795,7 +795,7 @@ const PendingPaymentContent = () => {
         setPendingPayments(payments);
       })
       .catch((error) => {
-        console.log("Error accepting payment:", error);
+        toast.error("Error accepting payment:", error);
       });
   };
 
@@ -818,7 +818,7 @@ const PendingPaymentContent = () => {
         setPendingPayments(payments);
       })
       .catch((error) => {
-        console.log("Error rejecting payment:", error);
+        toast.error("Error rejecting payment:", error);
       });
   };
 
@@ -842,7 +842,7 @@ const PendingPaymentContent = () => {
         setPendingExpenses(expenses);
       })
       .catch((error) => {
-        console.log("Error accepting expense:", error);
+        toast.error("Error accepting expense:", error);
       });
   };
 
@@ -865,7 +865,7 @@ const PendingPaymentContent = () => {
         setPendingExpenses(expenses);
       })
       .catch((error) => {
-        console.log("Error rejecting expense:", error);
+        toast.error("Error rejecting expense:", error);
       });
   };
 
@@ -916,7 +916,7 @@ const PendingPaymentContent = () => {
         setPendingReceivedFunds(payments);
       })
       .catch((error) => {
-        console.log("Error accepting payment:", error);
+        toast.error("Error accepting payment:", error);
       });
   };
 
@@ -939,7 +939,7 @@ const PendingPaymentContent = () => {
         setPendingReceivedFunds(payments);
       })
       .catch((error) => {
-        console.log("Error rejecting payment:", error);
+        toast.error("Error rejecting payment:", error);
       });
   };
 
@@ -1420,7 +1420,7 @@ const AllPaymentContent = () => {
         }
       })
       .catch((error) => {
-        console.log(error);
+        toast.error("Something went wrong!");
       });
   };
 
@@ -1842,7 +1842,7 @@ const AllExpenseContent = () => {
         setDepartments([]);
       }
     } catch (error) {
-      console.log(error);
+      toast.error("Failed to fetch expenses.");
     }
   };
 
@@ -3147,7 +3147,7 @@ const UsersContent = ({ isAdmin }) => {
 
               setDepartments(departmentsList);
             } catch (error) {
-              console.error("Error fetching departments:", error);
+              toast.error("Error fetching departments:", error);
             }
           };
 
@@ -3177,7 +3177,7 @@ const UsersContent = ({ isAdmin }) => {
           });
         });
       } catch (error) {
-        console.error("Error fetching departments:", error);
+        toast.error("Error fetching departments:", error);
       }
     };
 
@@ -3820,7 +3820,6 @@ const ReportsContent = ({ currentUserName, currentUserPosition }) => {
         throw new Error(errorData.message || "Error sending emails");
       }
     } catch (error) {
-      console.error("Error sending emails:", error);
       toast.error("Error sending emails. Please try again later.");
     }
   };
@@ -4750,7 +4749,7 @@ const CalenderContent = ({ department, isAdmin }) => {
         setNewEventType("");
         setNewEventTypeColor("#000000");
       } catch (error) {
-        console.log(error);
+        toast.error("Error creating event type.");
       }
     }
   };
@@ -5280,7 +5279,12 @@ const RecordExpenseContent = () => {
       status: "Pending",
       fileUrl: await handleFileUpload(expenseFile),
     };
-    await createExpense(expense);
+    if(!expense.fileUrl){
+      toast.error("Error uploading file");
+    }
+    else{
+      await createExpense(expense);
+    }
     resetForm();
   };
 
@@ -5291,10 +5295,9 @@ const RecordExpenseContent = () => {
       try {
         const snapshot = await uploadBytes(storageRef, file);
         const downloadURL = await getDownloadURL(snapshot.ref);
-        console.log("Download URL:", downloadURL);
         return downloadURL;
       } catch (error) {
-        console.error("Error uploading file:", error);
+        toast.error("Error uploading file:", error);
         return null;
       }
     }
@@ -5310,9 +5313,9 @@ const RecordExpenseContent = () => {
       await set(newExpenseRef, expense);
       resetForm();
 
-      console.log("Expense created successfully!");
+      toast.success("Expense created successfully!");
     } catch (error) {
-      console.error("Error creating expense:", error);
+      toast.error("Error creating expense:", error);
     }
   };
 
